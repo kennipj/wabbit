@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
@@ -22,6 +23,13 @@ class Integer(Expression):
 
 
 @dataclass
+class BinOp(Expression):
+    op: Literal["+", "*", "<", "==", ">"]
+    lhs: Expression
+    rhs: Expression
+
+
+@dataclass
 class Assignment(Statement):
     lhs: Name
     rhs: Expression
@@ -39,32 +47,8 @@ class Print(Statement):
 
 
 @dataclass
-class Add(Expression):
-    lhs: Expression
-    rhs: Expression
-
-
-@dataclass
-class Mul(Expression):
-    lhs: Expression
-    rhs: Expression
-
-
-@dataclass
 class Parenthesis(Expression):
     expr: Expression
-
-
-@dataclass
-class LessThan(Expression):
-    lhs: Expression
-    rhs: Expression
-
-
-@dataclass
-class Equal(Expression):
-    lhs: Expression
-    rhs: Expression
 
 
 @dataclass
