@@ -25,16 +25,18 @@ from model import (
 class Lines(list[str]):
     def __init__(self):
         super().__init__()
-        self.indentation = 0
+        self._indentation = 0
 
-    def __enter__(self):
-        self.indentation += 4
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.indentation -= 4
+    @contextmanager
+    def indent(self):
+        self._indentation += 4
+        try:
+            yield
+        finally:
+            self._indentation -= 4
 
     def append(self, line: str) -> None:
-        indented = f"{self.indentation * ' '}{line}"
+        indented = f"{self._indentation * ' '}{line}"
         return super().append(indented)
 
 
@@ -72,25 +74,25 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
         case While():
             lines.append(f"while {fmt_expr(node.condition)} {{")
             for stmt in node.body:
-                with lines:
+                with lines.indent():
                     fmt_stmt(stmt, lines)
             lines.append("}")
         case Branch():
             lines.append(f"if {fmt_expr(node.condition)} {{")
             for stmt in node.body:
-                with lines:
+                with lines.indent():
                     fmt_stmt(stmt, lines)
             if node.else_:
                 lines.append("} else {")
                 for stmt in node.else_:
-                    with lines:
+                    with lines.indent():
                         fmt_stmt(stmt, lines)
             lines.append("}")
         case Function():
             args = ", ".join(fmt_expr(arg) for arg in node.args)
             lines.append(f"func {fmt_expr(node.name)}({args}) {{")
             for stmt in node.body:
-                with lines:
+                with lines.indent():
                     fmt_stmt(stmt, lines)
             lines.append("}")
         case Return():
