@@ -73,27 +73,25 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
             lines.append(f"print {fmt_expr(node.expr)};")
         case While():
             lines.append(f"while {fmt_expr(node.condition)} {{")
-            for stmt in node.body:
-                with lines.indent():
-                    fmt_stmt(stmt, lines)
+            with lines.indent():
+                all(fmt_stmt(stmt, lines) for stmt in node.body)
             lines.append("}")
         case Branch():
             lines.append(f"if {fmt_expr(node.condition)} {{")
-            for stmt in node.body:
-                with lines.indent():
-                    fmt_stmt(stmt, lines)
+            with lines.indent():
+                all(fmt_stmt(stmt, lines) for stmt in node.body)
+
             if node.else_:
                 lines.append("} else {")
-                for stmt in node.else_:
-                    with lines.indent():
-                        fmt_stmt(stmt, lines)
+                with lines.indent():
+                    all(fmt_stmt(stmt, lines) for stmt in node.else_)
+
             lines.append("}")
         case Function():
             args = ", ".join(fmt_expr(arg) for arg in node.args)
             lines.append(f"func {fmt_expr(node.name)}({args}) {{")
-            for stmt in node.body:
-                with lines.indent():
-                    fmt_stmt(stmt, lines)
+            with lines.indent():
+                all(fmt_stmt(stmt, lines) for stmt in node.body)
             lines.append("}")
         case Return():
             lines.append(f"return {fmt_expr(node.expr)};")
