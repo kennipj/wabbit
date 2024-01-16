@@ -3,12 +3,17 @@ from typing import Literal
 
 
 @dataclass
-class Statement:
+class Node:
     ...
 
 
 @dataclass
-class Expression:
+class Statement(Node):
+    ...
+
+
+@dataclass
+class Expression(Node):
     ...
 
 
@@ -39,6 +44,11 @@ class Assignment(Statement):
 class Variable(Statement):
     name: Name
     expr: Expression
+
+
+@dataclass
+class VariableDecl(Statement):
+    name: Name
 
 
 @dataclass
@@ -83,5 +93,5 @@ class Call(Expression):
 
 
 @dataclass
-class Program:
+class Program(Node):
     statements: list[Statement]

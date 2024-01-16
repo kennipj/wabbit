@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from model import (
+from wab.model import (
     Assignment,
     BinOp,
     Branch,
@@ -15,6 +15,7 @@ from model import (
     Return,
     Statement,
     Variable,
+    VariableDecl,
     While,
 )
 
@@ -60,6 +61,8 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
             lines.append(f"{fmt_expr(node.lhs)} = {fmt_expr(node.rhs)};")
         case Variable():
             lines.append(f"var {fmt_expr(node.name)} = {fmt_expr(node.expr)};")
+        case VariableDecl():
+            lines.append(f"var {fmt_expr(node.name)};")
         case Print():
             lines.append(f"print {fmt_expr(node.expr)};")
         case While():
