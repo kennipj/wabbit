@@ -1,24 +1,20 @@
+import subprocess
+from importlib import import_module
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import cast
+
+from typer import Typer
+
 from wab.deinit import deinit_variables
 from wab.fold_constants import fold_constants
 from wab.format import format_program
 from wab.llvm import generate_llvm
 from wab.model import Program
-from wab.programs import (
-    bad_program_1,
-    program_1,
-    program_2,
-    program_3,
-    program_4,
-    program_5,
-    program_6,
-    program_7,
-)
 from wab.resolve import resolve_scopes
 from wab.unscript import unscript_toplevel
 
-
-def print_source(program: Program):
-    print(format_program(program))
+app = Typer()
 
 
 def simplify_tree(program: Program):
@@ -29,34 +25,53 @@ def simplify_tree(program: Program):
     return program
 
 
-def compile_to_llvm(program: Program, fname: str):
+def compile_to_llvm(program: Program, path: Path):
     program = simplify_tree(program)
     source = generate_llvm(program)
-    with open(f"wab/compiled/{fname}", "w") as f:
+    with open(path, "w") as f:
         f.write(source)
 
 
-print("\n---- PROGRAM 1  ----\n")
-print_source(simplify_tree(program_1))
-print("\n---- PROGRAM 2  ----\n")
-print_source(simplify_tree(program_2))
-print("\n---- PROGRAM 3  ----\n")
-print_source(simplify_tree(program_3))
-print("\n---- PROGRAM 4  ----\n")
-print_source(simplify_tree(program_4))
-print("\n---- PROGRAM 5  ----\n")
-print_source(simplify_tree(program_5))
-print("\n---- PROGRAM 6  ----\n")
-print_source(simplify_tree(program_6))
-print("\n---- PROGRAM 7  ----\n")
-print_source(simplify_tree(program_7))
-# print("\n---- BAD PROGRAM 1  ----\n")
-# print_source(simplify_tree(bad_program_1))
+@app.command()
+def llvm(program: str, output: str | None = None):
+    programs = import_module("wab.programs")
+    ast = cast(Program, getattr(programs, program))
+    if output:
+        compile_to_llvm(ast, Path(output))
+        return
+    ast = simplify_tree(ast)
+    print(generate_llvm(ast))
 
-compile_to_llvm(program_1, "program_1.ll")
-compile_to_llvm(program_2, "program_2.ll")
-compile_to_llvm(program_3, "program_3.ll")
-compile_to_llvm(program_4, "program_4.ll")
-compile_to_llvm(program_5, "program_5.ll")
-compile_to_llvm(program_6, "program_6.ll")
-compile_to_llvm(program_7, "program_7.ll")
+
+@app.command()
+def compile(
+    program: str,
+    fname: str,
+):
+    path = Path(fname)
+
+    programs = import_module("wab.programs")
+    ast = cast(Program, getattr(programs, program))
+    with TemporaryDirectory() as temp_dir:
+        file_path = Path(temp_dir) / path.with_suffix(".ll")
+        compile_to_llvm(ast, file_path)
+        subprocess.call(
+            [
+                "clang",
+                str(file_path),
+                "wab/misc/runtime.c",
+                "-o",
+                f"wab/bin/{fname}",
+            ]
+        )
+
+
+@app.command()
+def source(program: str):
+    programs = import_module("wab.programs")
+    ast = cast(Program, getattr(programs, program))
+    print(format_program(ast))
+
+
+if __name__ == "__main__":
+    app()
