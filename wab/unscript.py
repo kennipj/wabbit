@@ -1,6 +1,6 @@
 from typing import cast
 
-from wab.model import Function, GlobalVar, Integer, Program, Return, Variable
+from wab.model import Function, GlobalVar, Integer, Program, Return
 from wab.walker import Visitor, Walker
 
 
