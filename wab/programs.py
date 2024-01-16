@@ -115,9 +115,7 @@ program_6 = Program(
                             condition=BinOp(
                                 op="<", lhs=Name(value="x"), rhs=Integer(50)
                             ),
-                            body=[
-                                Variable(name="z", expr=Integer(42)),
-                            ],
+                            body=[],
                         ),
                     ],
                 ),

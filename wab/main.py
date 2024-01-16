@@ -1,6 +1,7 @@
 from wab.deinit import deinit_variables
 from wab.fold_constants import fold_constants
 from wab.format import format_program
+from wab.llvm import generate_llvm
 from wab.model import Program
 from wab.programs import (
     bad_program_1,
@@ -28,6 +29,13 @@ def simplify_tree(program: Program):
     return program
 
 
+def compile_to_llvm(program: Program, fname: str):
+    program = simplify_tree(program)
+    source = generate_llvm(program)
+    with open(f"wab/compiled/{fname}", "w") as f:
+        f.write(source)
+
+
 print("\n---- PROGRAM 1  ----\n")
 print_source(simplify_tree(program_1))
 print("\n---- PROGRAM 2  ----\n")
@@ -44,3 +52,11 @@ print("\n---- PROGRAM 7  ----\n")
 print_source(simplify_tree(program_7))
 # print("\n---- BAD PROGRAM 1  ----\n")
 # print_source(simplify_tree(bad_program_1))
+
+compile_to_llvm(program_1, "program_1.ll")
+compile_to_llvm(program_2, "program_2.ll")
+compile_to_llvm(program_3, "program_3.ll")
+compile_to_llvm(program_4, "program_4.ll")
+compile_to_llvm(program_5, "program_5.ll")
+compile_to_llvm(program_6, "program_6.ll")
+compile_to_llvm(program_7, "program_7.ll")
