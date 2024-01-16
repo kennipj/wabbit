@@ -10,6 +10,14 @@
             "justMyCode": false
         },
         {
+            "name": "Python: Wab Main",
+            "type": "python",
+            "request": "launch",
+            "program": "wab/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Python: Some Example",
             "type": "python",
             "request": "launch",
