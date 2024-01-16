@@ -18,26 +18,24 @@ from wab.walker import Visitor, Walker
 
 class ResolveScopes(Visitor):
     def __init__(self, to_visit: list[type[Node]]) -> None:
-        self._visited_function = False
-        self._visited_branch = False
-        self._visited_loop = False
+        self._visit_status: dict[int, bool] = {}
         self._globals = set()
         self._scope_level = 0
         super().__init__(to_visit)
 
     def visit_function(self, node: Function) -> Function:
-        self._scope_level += -1 if self._visited_function else 1
-        self._visited_function = not self._visited_function
+        self._visit_status[id(node)] = not self._visit_status.get(id(node), True)
+        self._scope_level += -1 if self._visit_status[id(node)] else 1
         return node
 
     def visit_branch(self, node: Branch) -> Branch:
-        self._scope_level += -1 if self._visited_branch else 1
-        self._visited_branch = not self._visited_branch
+        self._visit_status[id(node)] = not self._visit_status.get(id(node), True)
+        self._scope_level += -1 if self._visit_status[id(node)] else 1
         return node
 
     def visit_while(self, node: While) -> While:
-        self._scope_level += -1 if self._visited_loop else 1
-        self._visited_loop = not self._visited_loop
+        self._visit_status[id(node)] = not self._visit_status.get(id(node), True)
+        self._scope_level += -1 if self._visit_status[id(node)] else 1
         return node
 
     def visit_variabledecl(self, node: VariableDecl) -> VariableDecl:

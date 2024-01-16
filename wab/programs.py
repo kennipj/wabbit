@@ -99,3 +99,29 @@ program_5 = Program(
         ),
     ]
 )
+
+program_6 = Program(
+    statements=[
+        Variable(name="x", expr=Integer(42)),
+        While(
+            condition=BinOp(op="<", lhs=Name(value="x"), rhs=Integer(50)),
+            body=[
+                Variable(name="y", expr=Integer(42)),
+                While(
+                    condition=BinOp(op="<", lhs=Name(value="x"), rhs=Integer(50)),
+                    body=[
+                        Variable(name="z", expr=Integer(42)),
+                        While(
+                            condition=BinOp(
+                                op="<", lhs=Name(value="x"), rhs=Integer(50)
+                            ),
+                            body=[
+                                Variable(name="z", expr=Integer(42)),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    ]
+)
