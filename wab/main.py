@@ -3,6 +3,7 @@ from wab.fold_constants import fold_constants
 from wab.format import format_program
 from wab.model import Program
 from wab.programs import program_1, program_2, program_3, program_4, program_5
+from wab.resolve import resolve_scopes
 
 
 def print_source(program: Program):
@@ -12,6 +13,7 @@ def print_source(program: Program):
 def simplify_tree(program: Program):
     program = fold_constants(program)
     program = deinit_variables(program)
+    program = resolve_scopes(program)
     return program
 
 

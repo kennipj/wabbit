@@ -1,8 +1,10 @@
 from copy import deepcopy
 from dataclasses import fields
-from typing import Callable, cast
+from typing import Callable, Literal, Sequence, cast
 
 from wab.model import Expression, Node
+
+DIRECTION = Literal["backwards", "forwards", "both"]
 
 
 class Visitor:
@@ -17,33 +19,44 @@ class Walker:
             for node_type in visitor.to_visit
         }
 
-    def traverse(self, node: Node | list[Node]) -> Node | list[Node]:
+    def traverse(
+        self, node: Node | Sequence[Node], direction: DIRECTION = "backwards"
+    ) -> Node | Sequence[Node]:
         match node:
             case list():
-                return self.traverse_nodes(node)
+                return self._traverse_nodes(node, direction)
             case Node():
-                return self.traverse_node(node)
+                return self._traverse_node(node, direction)
             case _:
                 return node
 
-    def traverse_node(self, node: Node):
+    def _traverse_node(self, node: Node, direction: DIRECTION):
         match_res = None
         new_node = deepcopy(node)
         if not isinstance(node, Node):
             return node
+
+        if direction == "forwards" or direction == "both":
+            if func := self._to_call.get(type(node)):
+                match_res = cast(Expression, func(new_node))
+
         for field in fields(node):
             val = getattr(node, field.name)
-            res = self.traverse(val)
+            res = self.traverse(val, direction)
             setattr(new_node, field.name, res)
 
-        if func := self._to_call.get(type(node)):
-            match_res = cast(Expression, func(new_node))
+        if direction == "backwards" or direction == "both":
+            if func := self._to_call.get(type(node)):
+                match_res = cast(Expression, func(new_node))
+
         return match_res or new_node
 
-    def traverse_nodes(self, nodes: list[Node]) -> list[Node]:
+    def _traverse_nodes(
+        self, nodes: Sequence[Node], direction: DIRECTION
+    ) -> Sequence[Node]:
         new_nodes = []
         for node in nodes:
-            res = self.traverse(node)
+            res = self.traverse(node, direction)
             if isinstance(res, list):
                 new_nodes.extend(res)
             else:

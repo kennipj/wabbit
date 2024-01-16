@@ -14,7 +14,7 @@ from wab.model import (
 def test_folds_program_1():
     program = Program(
         statements=[
-            Variable(name=Name("x"), expr=Integer(10)),
+            Variable(name="x", expr=Integer(10)),
             Assignment(Name(value="x"), BinOp(op="+", lhs=Name("x"), rhs=Integer(1))),
             Print(
                 BinOp(
@@ -27,7 +27,7 @@ def test_folds_program_1():
     )
     assert fold_constants(program) == Program(
         statements=[
-            Variable(name=Name("x"), expr=Integer(10)),
+            Variable(name="x", expr=Integer(10)),
             Assignment(Name(value="x"), BinOp(op="+", lhs=Name("x"), rhs=Integer(1))),
             Print(
                 BinOp(

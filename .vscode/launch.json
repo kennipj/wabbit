@@ -13,7 +13,7 @@
             "name": "Python: Wab Main",
             "type": "python",
             "request": "launch",
-            "program": "wab/main.py",
+            "module": "wab.main",
             "console": "integratedTerminal",
             "justMyCode": false
         },

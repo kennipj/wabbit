@@ -16,7 +16,7 @@ from wab.model import (
 
 program_1 = Program(
     statements=[
-        Variable(name=Name("x"), expr=Integer(10)),
+        Variable(name="x", expr=Integer(10)),
         Assignment(Name(value="x"), BinOp(op="+", lhs=Name("x"), rhs=Integer(1))),
         Print(
             BinOp(
@@ -30,7 +30,7 @@ program_1 = Program(
 
 program_2 = Program(
     statements=[
-        Variable(name=Name("n"), expr=Integer(value=0)),
+        Variable(name="n", expr=Integer(value=0)),
         While(
             BinOp(op="<", lhs=Name(value="n"), rhs=Integer(10)),
             body=[
@@ -38,7 +38,7 @@ program_2 = Program(
                     condition=BinOp(op="==", lhs=Name("n"), rhs=Integer(10)),
                     body=[
                         Variable(
-                            name=Name("x"),
+                            name="x",
                             expr=BinOp(op="*", lhs=Name("n"), rhs=Integer(100)),
                         ),
                         Print(expr=Name("x")),
@@ -58,18 +58,14 @@ program_2 = Program(
 program_3 = Program(
     statements=[
         Function(
-            name=Name("square"),
-            args=[Name("x")],
+            name="square",
+            args=["x"],
             body=[
-                Variable(
-                    name=Name("r"), expr=BinOp(op="*", lhs=Name("x"), rhs=Name("x"))
-                ),
+                Variable(name="r", expr=BinOp(op="*", lhs=Name("x"), rhs=Name("x"))),
                 Return(Name("r")),
             ],
         ),
-        Variable(
-            name=Name("result"), expr=Call(name=Name("square"), args=[Integer(4)])
-        ),
+        Variable(name="result", expr=Call(name="square", args=[Integer(4)])),
         Print(expr=Name("result")),
     ]
 )
@@ -91,10 +87,10 @@ program_4 = Program(
 
 program_5 = Program(
     statements=[
-        Variable(name=Name("x"), expr=Integer(42)),
-        Variable(name=Name("y"), expr=BinOp("+", lhs=Integer(2), rhs=Name("x"))),
+        Variable(name="x", expr=Integer(42)),
+        Variable(name="y", expr=BinOp("+", lhs=Integer(2), rhs=Name("x"))),
         Variable(
-            name=Name("z"),
+            name="z",
             expr=BinOp(
                 op="*",
                 lhs=Parenthesis(expr=BinOp("+", lhs=Integer(3), rhs=Name("y"))),

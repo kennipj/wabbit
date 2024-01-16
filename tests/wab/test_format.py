@@ -19,7 +19,7 @@ from wab.model import (
 def test_formats_program_1():
     program = Program(
         statements=[
-            Variable(name=Name("x"), expr=Integer(10)),
+            Variable(name="x", expr=Integer(10)),
             Assignment(Name(value="x"), BinOp(op="+", lhs=Name("x"), rhs=Integer(1))),
             Print(
                 BinOp(
@@ -40,7 +40,7 @@ print (23 * 45) + x;"""
 def test_formats_program_2():
     program = Program(
         statements=[
-            Variable(name=Name("n"), expr=Integer(value=0)),
+            Variable(name="n", expr=Integer(value=0)),
             While(
                 BinOp(op="<", lhs=Name(value="n"), rhs=Integer(10)),
                 body=[
@@ -48,7 +48,7 @@ def test_formats_program_2():
                         condition=BinOp(op="==", lhs=Name("n"), rhs=Integer(10)),
                         body=[
                             Variable(
-                                name=Name("x"),
+                                name="x",
                                 expr=BinOp(op="*", lhs=Name("n"), rhs=Integer(100)),
                             ),
                             Print(expr=Name("x")),
@@ -82,18 +82,16 @@ def test_formats_program_3():
     program = Program(
         statements=[
             Function(
-                name=Name("square"),
-                args=[Name("x")],
+                name="square",
+                args=["x"],
                 body=[
                     Variable(
-                        name=Name("r"), expr=BinOp(op="*", lhs=Name("x"), rhs=Name("x"))
+                        name="r", expr=BinOp(op="*", lhs=Name("x"), rhs=Name("x"))
                     ),
                     Return(Name("r")),
                 ],
             ),
-            Variable(
-                name=Name("result"), expr=Call(name=Name("square"), args=[Integer(4)])
-            ),
+            Variable(name="result", expr=Call(name="square", args=[Integer(4)])),
             Print(expr=Name("result")),
         ]
     )

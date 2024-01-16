@@ -1,12 +1,15 @@
 from typing import cast
 
-from wab.model import Assignment, Program, Variable, VariableDecl
+from wab.model import Assignment, Name, Program, Variable, VariableDecl
 from wab.walker import Visitor, Walker
 
 
 class DeinitVisitor(Visitor):
     def visit_variable(self, node: Variable) -> list[VariableDecl | Assignment]:
-        return [VariableDecl(name=node.name), Assignment(lhs=node.name, rhs=node.expr)]
+        return [
+            VariableDecl(name=node.name),
+            Assignment(lhs=Name(node.name), rhs=node.expr),
+        ]
 
 
 def deinit_variables(program: Program) -> Program:

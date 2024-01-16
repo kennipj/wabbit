@@ -42,13 +42,13 @@ class Assignment(Statement):
 
 @dataclass
 class Variable(Statement):
-    name: Name
+    name: str
     expr: Expression
 
 
 @dataclass
 class VariableDecl(Statement):
-    name: Name
+    name: str
 
 
 @dataclass
@@ -76,8 +76,8 @@ class Branch(Statement):
 
 @dataclass
 class Function(Statement):
-    name: Name
-    args: list[Name]
+    name: str
+    args: list[str]
     body: list[Statement]
 
 
@@ -88,8 +88,28 @@ class Return(Statement):
 
 @dataclass
 class Call(Expression):
-    name: Name
+    name: str
     args: list[Expression]
+
+
+@dataclass
+class LocalVar(VariableDecl):
+    ...
+
+
+@dataclass
+class GlobalVar(VariableDecl):
+    ...
+
+
+@dataclass
+class LocalName(Name):
+    ...
+
+
+@dataclass
+class GlobalName(Name):
+    ...
 
 
 @dataclass
