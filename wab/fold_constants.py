@@ -10,14 +10,11 @@ class FoldConstants(Visitor):
             return node
         if not isinstance(node.lhs, Integer) or not isinstance(node.rhs, Integer):
             return node
-        if node.op == "+":
-            return Integer(
-                value=cast(Integer, node.lhs).value + cast(Integer, node.rhs).value
+        return Integer(
+            value=eval(
+                f"{cast(Integer, node.lhs).value} {node.op} {cast(Integer, node.rhs).value}"
             )
-        else:
-            return Integer(
-                value=cast(Integer, node.lhs).value * cast(Integer, node.rhs).value
-            )
+        )
 
     def visit_parenthesis(self, node: Parenthesis) -> Integer | Parenthesis:
         if isinstance(node.expr, Integer):
