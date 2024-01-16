@@ -125,3 +125,27 @@ program_6 = Program(
         ),
     ]
 )
+
+program_7 = Program(
+    statements=[
+        Variable(name="v", expr=Integer(4)),
+        Function(
+            name="square",
+            args=["x"],
+            body=[
+                Variable(name="r", expr=BinOp(op="*", lhs=Name("x"), rhs=Name("x"))),
+                Return(Name("r")),
+            ],
+        ),
+        Variable(name="result", expr=Call(name="square", args=[Integer(4)])),
+        Print(expr=Name("result")),
+    ]
+)
+
+bad_program_1 = Program(
+    statements=[
+        Assignment(
+            lhs=Name("y"), rhs=BinOp(op="+", lhs=Name("x"), rhs=Integer(value=1))
+        ),
+    ]
+)
