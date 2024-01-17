@@ -1,9 +1,11 @@
 from utils import read_source
 
 from wabbi.model import (
+    Assignment,
     BinOp,
     Branch,
     Call,
+    ExprAsStatement,
     Function,
     Integer,
     Name,
@@ -12,6 +14,7 @@ from wabbi.model import (
     Return,
     UnaryOp,
     Variable,
+    VariableDecl,
 )
 from wabbi.parser import Parser
 from wabbi.tokenizer import tokenize
@@ -85,5 +88,22 @@ def test_optional_else():
             ),
             Print(expr=Call(name="abs", args=[Integer(value=2)])),
             Print(expr=Call(name="abs", args=[UnaryOp(op="-", expr=Integer(value=2))])),
+        ]
+    )
+
+
+def test_optional_value():
+    source = read_source("test_optvalue.wb")
+    ast = Parser(tokenize(source)).parse()
+    assert ast == Program(
+        statements=[
+            VariableDecl(name="x"),
+            Function(
+                name="setx",
+                args=["v"],
+                body=[Assignment(lhs=Name(value="x"), rhs=Name(value="v"))],
+            ),
+            ExprAsStatement(expr=Call(name="setx", args=[Integer(value=123)])),
+            Print(expr=Name(value="x")),
         ]
     )

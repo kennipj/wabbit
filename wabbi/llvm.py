@@ -176,6 +176,7 @@ def out_stmt(node: Statement, lines: Lines) -> None:
                     lines.append(f"%{arg} = alloca i32")
                     lines.append(f"store i32 %.a{idx}, i32* %{arg}")
                 any(out_stmt(stmt, lines) for stmt in body)
+                lines.append("ret i32 0")
 
             lines.append("}")
 

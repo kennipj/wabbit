@@ -15,6 +15,7 @@ from wabbi.model import (
     Statement,
     UnaryOp,
     Variable,
+    VariableDecl,
     While,
 )
 from wabbi.tokenizer import Token
@@ -60,6 +61,7 @@ class Parser:
         to_try = [
             self.parse_assignment,
             self.parse_print,
+            self.parse_vardecl,
             self.parse_var,
             self.parse_return,
             self.parse_branch,
@@ -215,6 +217,12 @@ class Parser:
         if isinstance(lhs, BinOp) or isinstance(rhs, BinOp):
             raise ValueError(f"Unexpected binary operation: {lhs} + {rhs}")
         return BinOp(op="/", lhs=lhs, rhs=rhs)
+
+    def parse_vardecl(self) -> VariableDecl:
+        self.expect("VAR")
+        name = self.expect("NAME")
+        self.expect("SEMI")
+        return VariableDecl(name=name.value)
 
     def parse_var(self) -> Variable:
         self.expect("VAR")
