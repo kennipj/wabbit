@@ -1,3 +1,4 @@
+import pytest
 from utils import read_source
 
 from wab.parser import Parser
@@ -27,3 +28,27 @@ def test_parses_program_3():
     parser = Parser(tokens)
     program = parser.parse()
     assert program == program_3
+
+
+def test_errors_on_chained_additions():
+    source = "print 1 + 2 + 3;"
+    tokens = tokenize(source)
+    parser = Parser(tokens)
+    with pytest.raises(ValueError):
+        parser.parse()
+
+
+def test_errors_on_chained_additions_in_if():
+    source = "if 1 < 2 {print 1 + 2 + 3;} else {}"
+    tokens = tokenize(source)
+    parser = Parser(tokens)
+    with pytest.raises(ValueError):
+        parser.parse()
+
+
+def test_errors_on_chained_additions_in_else():
+    source = "if 1 < 2 {} else {print 1 + 2 + 3}"
+    tokens = tokenize(source)
+    parser = Parser(tokens)
+    with pytest.raises(ValueError):
+        parser.parse()
