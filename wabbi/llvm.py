@@ -62,6 +62,10 @@ def res_expr(node: Expression, lines: Lines) -> str:
                     lines.append(f"%{id_} = add i32 {lhs_res}, {rhs_res}")
                 case "*":
                     lines.append(f"%{id_} = mul i32 {lhs_res}, {rhs_res}")
+                case "-":
+                    lines.append(f"%{id_} = sub i32 {lhs_res}, {rhs_res}")
+                case "/":
+                    lines.append(f"%{id_} = sdiv i32 {lhs_res}, {rhs_res}")
                 case "<":
                     lines.append(f"%{id_} = icmp slt i32 {lhs_res}, {rhs_res}")
                 case "==":

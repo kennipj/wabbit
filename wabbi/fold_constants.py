@@ -6,7 +6,7 @@ from wabbi.walker import Visitor, Walker
 
 class FoldConstants(Visitor):
     def visit_binop(self, node: BinOp) -> Integer | BinOp:
-        if node.op not in {"+", "*"}:
+        if node.op not in {"+", "*", "/", "-"}:
             return node
 
         lhs_val = None

@@ -74,7 +74,13 @@ class Parser:
 
     def parse_expression(self) -> Expression:
         start = self.idx
-        to_try = [self.parse_add, self.parse_mul, self.parse_term]
+        to_try = [
+            self.parse_add,
+            self.parse_mul,
+            self.parse_sub,
+            self.parse_div,
+            self.parse_term,
+        ]
         for func in to_try:
             try:
                 return func()
@@ -138,6 +144,7 @@ class Parser:
         rhs = self.parse_expression()
         return BinOp(op="==", lhs=lhs, rhs=rhs)
 
+    # TODO(kennipj): Maybe refactor these binary operations into 1 func?
     def parse_add(self) -> BinOp:
         lhs = self.parse_term()
         self.expect("PLUS")
@@ -155,6 +162,24 @@ class Parser:
         if isinstance(lhs, BinOp) or isinstance(rhs, BinOp):
             raise ValueError(f"Unexpected binary operation: {lhs} + {rhs}")
         return BinOp(op="*", lhs=lhs, rhs=rhs)
+
+    def parse_sub(self) -> BinOp:
+        lhs = self.parse_term()
+        self.expect("MINUS")
+        rhs = self.parse_term()
+
+        if isinstance(lhs, BinOp) or isinstance(rhs, BinOp):
+            raise ValueError(f"Unexpected binary operation: {lhs} + {rhs}")
+        return BinOp(op="-", lhs=lhs, rhs=rhs)
+
+    def parse_div(self) -> BinOp:
+        lhs = self.parse_term()
+        self.expect("DIVIDE")
+        rhs = self.parse_term()
+
+        if isinstance(lhs, BinOp) or isinstance(rhs, BinOp):
+            raise ValueError(f"Unexpected binary operation: {lhs} + {rhs}")
+        return BinOp(op="/", lhs=lhs, rhs=rhs)
 
     def parse_var(self) -> Variable:
         self.expect("VAR")

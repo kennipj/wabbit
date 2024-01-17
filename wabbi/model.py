@@ -29,7 +29,7 @@ class Integer(Expression):
 
 @dataclass
 class BinOp(Expression):
-    op: Literal["+", "*", "<", "==", ">"]
+    op: Literal["+", "*", "-", "/", "<", "==", ">"]
     lhs: Expression
     rhs: Expression
 
