@@ -1,5 +1,3 @@
-from typing import Callable
-
 from wabbi.model import (
     Assignment,
     BinOp,
@@ -14,6 +12,7 @@ from wabbi.model import (
     Program,
     Return,
     Statement,
+    UnaryOp,
     Variable,
     While,
 )
@@ -26,13 +25,14 @@ class Parser:
         self.idx = 0
         self.excluded_expressions = set()
 
-    def expect(self, type_: str) -> Token:
+    def expect(self, type_: str, fatal: bool = False) -> Token:
         token = self.tokens[self.idx]
         if token.type_ == type_:
             self.idx += 1
             return token
-        else:
-            raise SyntaxError(f"Expected {type_}. Got {token}")
+        elif fatal:
+            raise ValueError(f"Expected {type_}. Got {token}")
+        raise SyntaxError(f"Expected {type_}. Got {token}")
 
     def peek(self, type_: str, num: int = 0) -> Token | None:
         if not (self.idx + num < len(self.tokens)):
@@ -72,21 +72,26 @@ class Parser:
                 self.idx = start
         return None
 
-    def parse_expression(self, exclude: list[Callable] | None = None) -> Expression:
-        if not exclude:
-            exclude = []
+    def parse_expression(self) -> Expression:
+        start = self.idx
+        to_try = [self.parse_add, self.parse_mul, self.parse_term]
+        for func in to_try:
+            try:
+                return func()
+            except SyntaxError:
+                self.idx = start
+        raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
+
+    def parse_term(self) -> Expression:
         start = self.idx
         to_try = [
-            self.parse_add,
-            self.parse_mul,
             self.parse_parenthesis,
+            self.parse_unary,
             self.parse_call,
             self.parse_name,
             self.parse_integer,
         ]
         for func in to_try:
-            if func in exclude:
-                continue
             try:
                 return func()
             except SyntaxError:
@@ -109,12 +114,17 @@ class Parser:
     def parse_parenthesis(self) -> Parenthesis:
         self.expect("LPAREN")
         expr = self.parse_expression()
-        self.expect("RPAREN")
+        self.expect("RPAREN", fatal=True)
         return Parenthesis(expr)
 
     def parse_integer(self) -> Integer:
         token = self.expect("INTEGER")
         return Integer(value=int(token.value))
+
+    def parse_unary(self) -> UnaryOp:
+        self.expect("MINUS")
+        rhs = self.parse_term()
+        return UnaryOp(op="-", expr=rhs)
 
     def parse_lt(self) -> BinOp:
         lhs = self.parse_expression()
@@ -129,21 +139,21 @@ class Parser:
         return BinOp(op="==", lhs=lhs, rhs=rhs)
 
     def parse_add(self) -> BinOp:
-        lhs = self.parse_expression(exclude=[self.parse_add, self.parse_mul])
+        lhs = self.parse_term()
         self.expect("PLUS")
-        rhs = self.parse_expression()
+        rhs = self.parse_term()
 
         if isinstance(lhs, BinOp) or isinstance(rhs, BinOp):
-            raise SyntaxError(f"Unexpected binary operation: {lhs} + {rhs}")
+            raise ValueError(f"Unexpected binary operation: {lhs} + {rhs}")
         return BinOp(op="+", lhs=lhs, rhs=rhs)
 
     def parse_mul(self) -> BinOp:
-        lhs = self.parse_expression(exclude=[self.parse_add, self.parse_mul])
+        lhs = self.parse_term()
         self.expect("TIMES")
-        rhs = self.parse_expression()
+        rhs = self.parse_term()
 
         if isinstance(lhs, BinOp) or isinstance(rhs, BinOp):
-            raise SyntaxError(f"Unexpected binary operation: {lhs} + {rhs}")
+            raise ValueError(f"Unexpected binary operation: {lhs} + {rhs}")
         return BinOp(op="*", lhs=lhs, rhs=rhs)
 
     def parse_var(self) -> Variable:
@@ -151,26 +161,26 @@ class Parser:
         name = self.expect("NAME")
         self.expect("ASSIGN")
         expr = self.parse_expression()
-        self.expect("SEMI")
+        self.expect("SEMI", fatal=True)
         return Variable(name=name.value, expr=expr)
 
     def parse_print(self) -> Print:
         self.expect("PRINT")
         expr = self.parse_expression()
-        self.expect("SEMI")
+        self.expect("SEMI", fatal=True)
         return Print(expr=expr)
 
     def parse_return(self) -> Return:
         self.expect("RETURN")
         expr = self.parse_expression()
-        self.expect("SEMI")
+        self.expect("SEMI", fatal=True)
         return Return(expr=expr)
 
     def parse_call(self) -> Call:
         func = self.expect("NAME")
         self.expect("LPAREN")
         arg = self.parse_expression()
-        self.expect("RPAREN")
+        self.expect("RPAREN", fatal=True)
         return Call(name=func.value, args=[arg])
 
     def parse_func(self) -> Function:
@@ -178,7 +188,7 @@ class Parser:
         name = self.expect("NAME")
         self.expect("LPAREN")
         arg = self.expect("NAME")
-        self.expect("RPAREN")
+        self.expect("RPAREN", fatal=True)
         self.expect("LBRACE")
         statements = self.parse_statements()
         self.expect("RBRACE")
@@ -187,7 +197,7 @@ class Parser:
     def parse_while(self) -> While:
         self.expect("WHILE")
         rel = self.parse_relation()
-        self.expect("LBRACE")
+        self.expect("LBRACE", fatal=True)
         statements = self.parse_statements()
         self.expect("RBRACE")
         return While(condition=rel, body=statements)
@@ -195,7 +205,7 @@ class Parser:
     def parse_branch(self) -> Branch:
         self.expect("IF")
         rel = self.parse_relation()
-        self.expect("LBRACE")
+        self.expect("LBRACE", fatal=True)
         statements = self.parse_statements()
         self.expect("RBRACE")
         else_ = []
@@ -210,9 +220,9 @@ class Parser:
         name = self.expect("NAME")
         self.expect("ASSIGN")
         expr = self.parse_expression()
-        self.expect("SEMI")
+        self.expect("SEMI", fatal=True)
         return Assignment(lhs=Name(value=name.value), rhs=expr)
 
     def parse_name(self) -> Name:
-        token = self.expect("NAME")
+        token = self.expect("NAME", fatal=False)
         return Name(token.value)

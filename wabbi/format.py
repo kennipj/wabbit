@@ -16,6 +16,7 @@ from wabbi.model import (
     Program,
     Return,
     Statement,
+    UnaryOp,
     Variable,
     VariableDecl,
     While,
@@ -46,6 +47,9 @@ def fmt_expr(node: Expression) -> str:
 
         case BinOp(op, lhs, rhs):
             return f"{fmt_expr(lhs)} {op} {fmt_expr(rhs)}"
+
+        case UnaryOp(op, expr):
+            return f"{op}{fmt_expr(expr)}"
 
         case Parenthesis(expr):
             return f"({fmt_expr(expr)})"

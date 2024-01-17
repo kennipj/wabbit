@@ -13,6 +13,7 @@ KEYWORDS = {
 ONE_CHAR_SYMBOLS = {
     "+": "PLUS",
     "*": "TIMES",
+    "-": "MINUS",
     "<": "LT",
     "=": "ASSIGN",
     ";": "SEMI",

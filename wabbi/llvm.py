@@ -16,6 +16,7 @@ from wabbi.model import (
     Program,
     Return,
     Statement,
+    UnaryOp,
     Variable,
     While,
 )
@@ -65,6 +66,12 @@ def res_expr(node: Expression, lines: Lines) -> str:
                     lines.append(f"%{id_} = icmp slt i32 {lhs_res}, {rhs_res}")
                 case "==":
                     lines.append(f"%{id_} = icmp eq i32 {lhs_res}, {rhs_res}")
+            return f"%{id_}"
+
+        case UnaryOp(op, expr):
+            res = res_expr(expr, lines)
+            id_ = gensym()
+            lines.append(f"%{id_} = sub i32 0, {res}")
             return f"%{id_}"
 
         case Parenthesis(expr):

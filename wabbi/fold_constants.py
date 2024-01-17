@@ -1,6 +1,6 @@
 from typing import cast
 
-from wabbi.model import BinOp, Integer, Parenthesis, Program
+from wabbi.model import BinOp, Integer, Parenthesis, Program, UnaryOp
 from wabbi.walker import Visitor, Walker
 
 
@@ -8,13 +8,22 @@ class FoldConstants(Visitor):
     def visit_binop(self, node: BinOp) -> Integer | BinOp:
         if node.op not in {"+", "*"}:
             return node
-        if not isinstance(node.lhs, Integer) or not isinstance(node.rhs, Integer):
-            return node
-        return Integer(
-            value=eval(
-                f"{cast(Integer, node.lhs).value} {node.op} {cast(Integer, node.rhs).value}"
-            )
-        )
+
+        lhs_val = None
+        rhs_val = None
+        if isinstance(node.lhs, Integer):
+            lhs_val = node.lhs.value
+        if isinstance(node.lhs, UnaryOp) and isinstance(node.lhs.expr, Integer):
+            lhs_val = -node.lhs.expr.value
+
+        if isinstance(node.rhs, UnaryOp) and isinstance(node.rhs.expr, Integer):
+            rhs_val = -node.rhs.expr.value
+        if isinstance(node.rhs, Integer):
+            rhs_val = node.rhs.value
+
+        if lhs_val is not None and rhs_val is not None:
+            return Integer(value=eval(f"{lhs_val} {node.op} {rhs_val}"))
+        return node
 
     def visit_parenthesis(self, node: Parenthesis) -> Integer | Parenthesis:
         if isinstance(node.expr, Integer):

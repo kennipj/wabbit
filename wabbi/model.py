@@ -113,5 +113,11 @@ class GlobalName(Name):
 
 
 @dataclass
+class UnaryOp(Expression):
+    op: Literal["-"]
+    expr: Expression
+
+
+@dataclass
 class Program(Node):
     statements: list[Statement]
