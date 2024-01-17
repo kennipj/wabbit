@@ -119,5 +119,10 @@ class UnaryOp(Expression):
 
 
 @dataclass
+class ExprAsStatement(Statement):
+    expr: Expression
+
+
+@dataclass
 class Program(Node):
     statements: list[Statement]

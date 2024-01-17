@@ -3,6 +3,7 @@ from wabbi.model import (
     BinOp,
     Branch,
     Call,
+    ExprAsStatement,
     Expression,
     Function,
     Integer,
@@ -64,6 +65,7 @@ class Parser:
             self.parse_branch,
             self.parse_func,
             self.parse_while,
+            self.parse_expr_as_stmt,
         ]
         for func in to_try:
             try:
@@ -71,6 +73,11 @@ class Parser:
             except SyntaxError:
                 self.idx = start
         return None
+
+    def parse_expr_as_stmt(self) -> ExprAsStatement:
+        expr = self.parse_expression()
+        self.expect("SEMI")
+        return ExprAsStatement(expr=expr)
 
     def parse_expression(self) -> Expression:
         start = self.idx

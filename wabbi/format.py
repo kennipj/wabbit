@@ -3,6 +3,7 @@ from wabbi.model import (
     BinOp,
     Branch,
     Call,
+    ExprAsStatement,
     Expression,
     Function,
     GlobalName,
@@ -109,6 +110,9 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
 
         case Return(expr):
             lines.append(f"return {fmt_expr(expr)};")
+
+        case ExprAsStatement(expr):
+            lines.append(f"{expr};")
 
         case _:
             raise ValueError(f"Unexpected statement: {node}")
