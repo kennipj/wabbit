@@ -9,6 +9,7 @@ from wabbi.model import (
     Function,
     Integer,
     Name,
+    Parenthesis,
     Print,
     Program,
     Return,
@@ -105,5 +106,39 @@ def test_optional_value():
             ),
             ExprAsStatement(expr=Call(name="setx", args=[Integer(value=123)])),
             Print(expr=Name(value="x")),
+        ]
+    )
+
+
+def test_multiple_args():
+    source = read_source("test_multiple.wb")
+    ast = Parser(tokenize(source)).parse()
+    assert ast == Program(
+        statements=[
+            Function(
+                name="f",
+                args=["x", "y", "z"],
+                body=[
+                    Return(
+                        expr=BinOp(
+                            op="*",
+                            lhs=Parenthesis(
+                                expr=BinOp(
+                                    op="+", lhs=Name(value="x"), rhs=Name(value="y")
+                                )
+                            ),
+                            rhs=Name(value="z"),
+                        )
+                    )
+                ],
+            ),
+            Print(
+                expr=Call(
+                    name="f",
+                    args=[Integer(value=1), Integer(value=2), Integer(value=3)],
+                )
+            ),
+            Function(name="g", args=[], body=[Return(expr=Integer(value=42))]),
+            Print(expr=Call(name="g", args=[])),
         ]
     )

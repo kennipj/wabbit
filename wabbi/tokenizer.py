@@ -23,6 +23,7 @@ ONE_CHAR_SYMBOLS = {
     "{": "LBRACE",
     "}": "RBRACE",
     "/": "DIVIDE",
+    ",": "COMMA",
 }
 
 TWO_CHAR_SYMBOLS = {

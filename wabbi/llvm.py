@@ -91,11 +91,11 @@ def res_expr(node: Expression, lines: Lines) -> str:
             return res_expr(expr, lines)
 
         case Call(name, args):
-            args_res = ", i32 ".join([res_expr(arg, lines) for arg in args])
+            args_res = ", ".join([f"i32 {res_expr(arg, lines)}" for arg in args])
             arg_types = ", ".join("i32" for _ in range(len(args)))
             id_ = gensym()
 
-            lines.append(f"%{id_} = call i32 ({arg_types}) @{name}(i32 {args_res})")
+            lines.append(f"%{id_} = call i32 ({arg_types}) @{name}({args_res})")
             return f"%{id_}"
 
         case Integer(value):
@@ -169,8 +169,8 @@ def out_stmt(node: Statement, lines: Lines) -> None:
             lines.extend([f"{lm}:"])
 
         case Function(name, args, body):
-            res_args = ", i32 %.a".join(str(n) for n in range(len(args)))
-            lines.append(f"define i32 @{name}(i32 %.a{res_args}) {{")
+            res_args = ", ".join(f"i32 %.a{n}" for n in range(len(args)))
+            lines.append(f"define i32 @{name}({res_args}) {{")
             with lines.indent():
                 for idx, arg in enumerate(args):
                     lines.append(f"%{arg} = alloca i32")

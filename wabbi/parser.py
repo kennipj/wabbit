@@ -247,20 +247,48 @@ class Parser:
     def parse_call(self) -> Call:
         func = self.expect("NAME")
         self.expect("LPAREN")
-        arg = self.parse_expression()
+        if not self.peek("RPAREN"):
+            args = self.parse_call_args()
+        else:
+            args = []
         self.expect("RPAREN", fatal=True)
-        return Call(name=func.value, args=[arg])
+        return Call(name=func.value, args=args)
+
+    def parse_call_args(self) -> list[Expression]:
+        args: list[Expression] = []
+        while True:
+            arg = self.parse_expression()
+            if self.peek("RPAREN"):
+                args.append(arg)
+                break
+            self.expect("COMMA", fatal=True)
+            args.append(arg)
+        return args
 
     def parse_func(self) -> Function:
         self.expect("FUNC")
         name = self.expect("NAME")
         self.expect("LPAREN")
-        arg = self.expect("NAME")
+        args = self.parse_func_args()
         self.expect("RPAREN", fatal=True)
         self.expect("LBRACE")
         statements = self.parse_statements()
         self.expect("RBRACE")
-        return Function(name.value, args=[arg.value], body=statements)
+        return Function(name.value, args=args, body=statements)
+
+    def parse_func_args(self) -> list[str]:
+        args: list[str] = []
+        while True:
+            arg = self.peek("NAME")
+            if not arg:
+                break
+            self.expect("NAME", fatal=True)
+            if self.peek("RPAREN"):
+                args.append(arg.value)
+                break
+            self.expect("COMMA", fatal=True)
+            args.append(arg.value)
+        return args
 
     def parse_while(self) -> While:
         self.expect("WHILE")
