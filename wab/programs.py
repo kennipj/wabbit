@@ -35,7 +35,7 @@ program_2 = Program(
             BinOp(op="<", lhs=Name(value="n"), rhs=Integer(10)),
             body=[
                 Branch(
-                    condition=BinOp(op="==", lhs=Name("n"), rhs=Integer(10)),
+                    condition=BinOp(op="==", lhs=Name("n"), rhs=Integer(5)),
                     body=[
                         Variable(
                             name="x",

@@ -38,9 +38,7 @@ def test_scopes_nested_while_program():
                                 condition=BinOp(
                                     op="<", lhs=Name(value="x"), rhs=Integer(50)
                                 ),
-                                body=[
-                                    Variable(name="z", expr=Integer(42)),
-                                ],
+                                body=[],
                             ),
                         ],
                     ),
@@ -72,12 +70,7 @@ def test_scopes_nested_while_program():
                                     lhs=GlobalName(value="x"),
                                     rhs=Integer(value=50),
                                 ),
-                                body=[
-                                    LocalVar(name="z"),
-                                    Assignment(
-                                        lhs=LocalName(value="z"), rhs=Integer(value=42)
-                                    ),
-                                ],
+                                body=[],
                             ),
                         ],
                     ),

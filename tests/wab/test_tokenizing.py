@@ -1,11 +1,6 @@
-import pytest
+from utils import read_source
 
 from wab.tokenizer import Token, tokenize
-
-
-def read_source(program: str) -> str:
-    with open(f"wab/tests/{program}") as f:
-        return f.read()
 
 
 def test_program_1():
