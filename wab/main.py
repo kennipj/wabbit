@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from pprint import pprint
 from tempfile import TemporaryDirectory
 
 from typer import Typer
@@ -11,7 +12,7 @@ from wab.llvm import generate_llvm
 from wab.model import Program
 from wab.parser import Parser
 from wab.resolve import resolve_scopes
-from wab.tokenizer import tokenize
+from wab.tokenizer import tokenize as _tokenize
 from wab.unscript import unscript_toplevel
 
 app = Typer()
@@ -51,10 +52,36 @@ def compile(
 
 
 @app.command()
-@app.command()
 def source(file: str):
     ast = _to_ast(file)
     print(format_program(ast))
+
+
+@app.command()
+def ast(
+    file: str,
+    fold: bool = False,
+    deinit: bool = False,
+    resolve: bool = False,
+    unscript: bool = False,
+):
+    ast = _to_ast(file)
+    if fold:
+        ast = fold_constants(ast)
+    if deinit:
+        ast = deinit_variables(ast)
+    if resolve:
+        ast = resolve_scopes(ast)
+    if unscript:
+        ast = unscript_toplevel(ast)
+    pprint(ast)
+
+
+@app.command()
+def tokenize(file: str) -> None:
+    with open(file) as f:
+        source = f.read()
+    pprint(_tokenize(source))
 
 
 def _compile_to_llvm(path: str):
@@ -63,18 +90,18 @@ def _compile_to_llvm(path: str):
     return generate_llvm(ast)
 
 
-def _simplify_tree(program: Program):
-    program = fold_constants(program)
-    program = deinit_variables(program)
-    program = resolve_scopes(program)
-    program = unscript_toplevel(program)
-    return program
+def _simplify_tree(ast: Program):
+    ast = fold_constants(ast)
+    ast = deinit_variables(ast)
+    ast = resolve_scopes(ast)
+    ast = unscript_toplevel(ast)
+    return ast
 
 
 def _to_ast(file: str) -> Program:
     with open(file) as f:
         source = f.read()
-    return Parser(tokenize(source)).parse()
+    return Parser(_tokenize(source)).parse()
 
 
 if __name__ == "__main__":

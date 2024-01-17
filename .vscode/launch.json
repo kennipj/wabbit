@@ -25,5 +25,18 @@
             "console": "integratedTerminal",
             "justMyCode": false
         },
+        {
+            "name": "Python: Wab Compile",
+            "type": "python",
+            "request": "launch",
+            "module": "wab.main",
+            "args": [
+                "compile",
+                "wab/tests/test_program1.wb",
+                "compiled.exe"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
     ]
 }
