@@ -68,8 +68,16 @@ def res_expr(node: Expression, lines: Lines) -> str:
                     lines.append(f"%{id_} = sdiv i32 {lhs_res}, {rhs_res}")
                 case "<":
                     lines.append(f"%{id_} = icmp slt i32 {lhs_res}, {rhs_res}")
+                case ">":
+                    lines.append(f"%{id_} = icmp sgt i32 {lhs_res}, {rhs_res}")
+                case "<=":
+                    lines.append(f"%{id_} = icmp sle i32 {lhs_res}, {rhs_res}")
+                case ">=":
+                    lines.append(f"%{id_} = icmp sge i32 {lhs_res}, {rhs_res}")
                 case "==":
                     lines.append(f"%{id_} = icmp eq i32 {lhs_res}, {rhs_res}")
+                case "!=":
+                    lines.append(f"%{id_} = icmp ne i32 {lhs_res}, {rhs_res}")
             return f"%{id_}"
 
         case UnaryOp(op, expr):

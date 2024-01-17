@@ -15,6 +15,7 @@ ONE_CHAR_SYMBOLS = {
     "*": "TIMES",
     "-": "MINUS",
     "<": "LT",
+    ">": "GT",
     "=": "ASSIGN",
     ";": "SEMI",
     "(": "LPAREN",
@@ -24,7 +25,13 @@ ONE_CHAR_SYMBOLS = {
     "/": "DIVIDE",
 }
 
-TWO_CHAR_SYMBOLS = {"==": "EQ", "//": "COMMENT"}
+TWO_CHAR_SYMBOLS = {
+    "==": "EQ",
+    "<=": "LTE",
+    ">=": "GTE",
+    "!=": "NOTEQ",
+    "//": "COMMENT",
+}
 
 
 @dataclass

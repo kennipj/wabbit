@@ -107,8 +107,12 @@ class Parser:
     def parse_relation(self) -> BinOp:
         start = self.idx
         to_try = [
-            self.parse_eq,
             self.parse_lt,
+            self.parse_gt,
+            self.parse_lte,
+            self.parse_gte,
+            self.parse_eq,
+            self.parse_neq,
         ]
         for func in to_try:
             try:
@@ -138,11 +142,35 @@ class Parser:
         rhs = self.parse_expression()
         return BinOp(op="<", lhs=lhs, rhs=rhs)
 
+    def parse_gt(self) -> BinOp:
+        lhs = self.parse_expression()
+        self.expect("GT")
+        rhs = self.parse_expression()
+        return BinOp(op=">", lhs=lhs, rhs=rhs)
+
+    def parse_lte(self) -> BinOp:
+        lhs = self.parse_expression()
+        self.expect("LTE")
+        rhs = self.parse_expression()
+        return BinOp(op="<=", lhs=lhs, rhs=rhs)
+
+    def parse_gte(self) -> BinOp:
+        lhs = self.parse_expression()
+        self.expect("GTE")
+        rhs = self.parse_expression()
+        return BinOp(op=">=", lhs=lhs, rhs=rhs)
+
     def parse_eq(self) -> BinOp:
         lhs = self.parse_expression()
         self.expect("EQ")
         rhs = self.parse_expression()
         return BinOp(op="==", lhs=lhs, rhs=rhs)
+
+    def parse_neq(self) -> BinOp:
+        lhs = self.parse_expression()
+        self.expect("NOTEQ")
+        rhs = self.parse_expression()
+        return BinOp(op="!=", lhs=lhs, rhs=rhs)
 
     # TODO(kennipj): Maybe refactor these binary operations into 1 func?
     def parse_add(self) -> BinOp:
