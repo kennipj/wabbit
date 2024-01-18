@@ -56,8 +56,8 @@
             "request": "launch",
             "module": "wabbi.main",
             "args": [
-                "llvm",
-                "wabbi/tests/test_localscope.wb",
+                "source",
+                "wabbit/tests/test_typespecifier.wb",
             ],
             "console": "integratedTerminal",
             "justMyCode": false

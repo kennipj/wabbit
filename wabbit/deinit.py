@@ -1,7 +1,7 @@
 from typing import cast
 
 from wabbit.exceptions import WabbitSyntaxError
-from wabbit.model import Assignment, Name, Node, Program, Variable, VariableDecl
+from wabbit.model import Assignment, Name, Node, Program, Type, Variable, VariableDecl
 from wabbit.walker import Visitor, Walker
 
 
@@ -25,7 +25,9 @@ class DeinitVisitor(Visitor):
         else:
             self._vars.add(node.name)
         return [
-            VariableDecl(name=node.name, loc=node.loc),
+            VariableDecl(
+                name=node.name, loc=node.loc, type_=Type(value="int", loc=node.loc)
+            ),
             Assignment(
                 lhs=Name(value=node.name, loc=node.loc), rhs=node.expr, loc=node.loc
             ),

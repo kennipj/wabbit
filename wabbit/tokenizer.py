@@ -16,6 +16,10 @@ KEYWORDS = {
     "or": "OR",
     "and": "AND",
     "break": "BREAK",
+    "int": "INT",
+    "bool": "BOOL",
+    "float": "FLOAT",
+    "char": "CHAR",
 }
 
 ONE_CHAR_SYMBOLS = {

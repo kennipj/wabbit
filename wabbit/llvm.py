@@ -200,8 +200,8 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
             lines.append(f"define i32 @{node.name}({res_args}) {{")
             with lines.indent():
                 for idx, arg in enumerate(node.args):
-                    lines.append(f"%{arg} = alloca i32")
-                    lines.append(f"store i32 %.a{idx}, i32* %{arg}")
+                    lines.append(f"%{arg.value} = alloca i32")
+                    lines.append(f"store i32 %.a{idx}, i32* %{arg.value}")
                 any(out_stmt(stmt, lines) for stmt in node.body)
                 lines.append("ret i32 0")
 

@@ -1,13 +1,32 @@
 from typing import cast
 
-from wabbit.model import Function, GlobalVar, Integer, Program, Return, SourceLoc
+from wabbit.model import (
+    Function,
+    FunctionArg,
+    GlobalVar,
+    Integer,
+    Program,
+    Return,
+    SourceLoc,
+    Type,
+)
 from wabbit.walker import Visitor, Walker
 
 
 class UnscriptToplevel(Visitor):
     def visit_program(self, node: Program) -> Program:
         new_func = Function(
-            name="main", args=["_"], body=[], loc=SourceLoc(lineno=0, start=0, end=0)
+            name="main",
+            args=[
+                FunctionArg(
+                    value="_",
+                    type_=Type(value="int", loc=SourceLoc(0, 0, 0)),
+                    loc=SourceLoc(0, 0, 0),
+                )
+            ],
+            body=[],
+            ret_type_=Type(value="int", loc=SourceLoc(0, 0, 0)),
+            loc=SourceLoc(lineno=0, start=0, end=0),
         )
         new_program_stmts = []
         for stmt in node.statements:

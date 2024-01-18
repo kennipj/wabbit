@@ -8,6 +8,7 @@ from wabbit.model import (
     ExprAsStatement,
     Expression,
     Function,
+    FunctionArg,
     GlobalName,
     GlobalVar,
     Integer,
@@ -44,6 +45,9 @@ def fmt_expr(node: Expression) -> str:
 
         case GlobalName():
             return f"global[{node.value}]"
+
+        case FunctionArg():
+            return f"{node.value} {node.type_.value}"
 
         case Name():
             return node.value
@@ -89,7 +93,7 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
             lines.append(f"local {node.name};")
 
         case VariableDecl():
-            lines.append(f"var {node.name};")
+            lines.append(f"var {node.name} {node.type_.value};")
 
         case Print():
             lines.append(f"print {fmt_expr(node.expr)};")
@@ -113,8 +117,8 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
             lines.append("}")
 
         case Function():
-            formatted_args = ", ".join(arg for arg in node.args)
-            lines.append(f"func {node.name}({formatted_args}) {{")
+            formatted_args = ", ".join(fmt_expr(arg) for arg in node.args)
+            lines.append(f"func {node.name}({formatted_args}) {node.ret_type_.value}{{")
             with lines.indent():
                 any(fmt_stmt(stmt, lines) for stmt in node.body)
             lines.append("}")

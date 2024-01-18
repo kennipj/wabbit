@@ -27,7 +27,7 @@ class ResolveScopes(Visitor):
         super().__init__(to_visit, source, fname)
 
     def visit_function(self, node: Function) -> Function:
-        self._varnames.update({arg for arg in node.args})
+        self._varnames.update({arg.value for arg in node.args})
         self._visit_status[id(node)] = not self._visit_status.get(id(node), True)
         self._scope_level += -1 if self._visit_status[id(node)] else 1
         return node
@@ -45,9 +45,9 @@ class ResolveScopes(Visitor):
     def visit_variabledecl(self, node: VariableDecl) -> VariableDecl:
         self._varnames.add(node.name)
         if self._scope_level > 0:
-            return LocalVar(name=node.name, loc=node.loc)
+            return LocalVar(name=node.name, loc=node.loc, type_=node.type_)
         self._globals.add(node.name)
-        return GlobalVar(name=node.name, loc=node.loc)
+        return GlobalVar(name=node.name, loc=node.loc, type_=node.type_)
 
     def visit_name(self, node: Name) -> Name:
         if node.value not in self._varnames:

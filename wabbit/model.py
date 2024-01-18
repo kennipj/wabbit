@@ -27,6 +27,11 @@ class Expression(Node):
 
 
 @dataclass
+class Type(Node):
+    value: Literal["int"]
+
+
+@dataclass
 class Name(Expression):
     value: str
 
@@ -70,6 +75,7 @@ class Variable(Statement):
 @dataclass
 class VariableDecl(Statement):
     name: str
+    type_: Type
 
 
 @dataclass
@@ -96,10 +102,16 @@ class Branch(Statement):
 
 
 @dataclass
+class FunctionArg(Name):
+    type_: Type
+
+
+@dataclass
 class Function(Statement):
     name: str
-    args: list[str]
+    args: list[FunctionArg]
     body: list[Statement]
+    ret_type_: Type
 
 
 @dataclass

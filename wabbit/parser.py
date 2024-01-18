@@ -14,6 +14,7 @@ from wabbit.model import (
     ExprAsStatement,
     Expression,
     Function,
+    FunctionArg,
     Integer,
     LogicalOp,
     Name,
@@ -25,6 +26,7 @@ from wabbit.model import (
     Return,
     SourceLoc,
     Statement,
+    Type,
     UnaryOp,
     Variable,
     VariableDecl,
@@ -149,6 +151,16 @@ class Parser:
             self.parse_bool_term,
             partial(self.parse_errorexpr, err),
         ]
+        for func in to_try:
+            try:
+                return func()
+            except SyntaxError:
+                self.idx = start
+        raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
+
+    def parse_type(self, err: WabbitSyntaxError | None = None) -> Type:
+        start = self.idx
+        to_try = [self.parse_int_type]
         for func in to_try:
             try:
                 return func()
@@ -380,9 +392,11 @@ class Parser:
     def parse_vardecl(self) -> VariableDecl:
         var = self.expect("VAR")
         name = self.expect("NAME")
+        type_ = self.parse_type()
         end = self.expect("SEMI")
         return VariableDecl(
             name=name.value,
+            type_=type_,
             loc=SourceLoc(lineno=var.lineno, start=var.column, end=end.column),
         )
 
@@ -447,6 +461,7 @@ class Parser:
         self.expect("LPAREN")
         args = self.parse_func_args()
         self.expect("RPAREN", fatal=True)
+        type_ = self.parse_type()
         self.expect("LBRACE")
         statements = self.parse_statements()
         end_brace = self.expect("RBRACE")
@@ -454,21 +469,31 @@ class Parser:
             name=name.value,
             args=args,
             body=statements,
+            ret_type_=type_,
             loc=SourceLoc(lineno=func.lineno, start=func.column, end=end_brace.column),
         )
 
-    def parse_func_args(self) -> list[str]:
-        args: list[str] = []
+    def parse_func_arg(self) -> FunctionArg:
+        name = self.expect("NAME")
+        type_ = self.parse_type()
+        return FunctionArg(
+            value=name.value,
+            type_=type_,
+            loc=SourceLoc(lineno=name.lineno, start=name.column, end=type_.loc.end),
+        )
+
+    def parse_func_args(self) -> list[FunctionArg]:
+        args: list[FunctionArg] = []
         while True:
             arg = self.peek("NAME")
             if not arg:
                 break
-            self.expect("NAME", fatal=True)
+            arg = self.parse_func_arg()
             if self.peek("RPAREN"):
-                args.append(arg.value)
+                args.append(arg)
                 break
             self.expect("COMMA", fatal=True)
-            args.append(arg.value)
+            args.append(arg)
         return args
 
     def parse_while(self) -> While:
@@ -537,6 +562,15 @@ class Parser:
         if not err:
             raise SyntaxError("Unhandled exception!")
         return ErrorExpr(err=err, loc=SourceLoc(err.lineno, err.start, err.end))
+
+    def parse_int_type(self) -> Type:
+        int_ = self.expect("INT")
+        return Type(
+            value="int",
+            loc=SourceLoc(
+                lineno=int_.lineno, start=int_.column, end=int_.column + len(int_)
+            ),
+        )
 
     def _make_err(self, token: Token, msg: str) -> WabbitSyntaxError:
         return WabbitSyntaxError.from_token(msg, self.fname, self.source, token)
