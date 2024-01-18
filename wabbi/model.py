@@ -40,7 +40,7 @@ class BinOp(Expression):
 
 
 @dataclass
-class RelationalOp(Expression):
+class RelationalOp(BooleanExpression):
     op: Literal["==", "<", ">", "<=", ">=", "!="]
     lhs: Expression
     rhs: Expression
@@ -151,6 +151,11 @@ class LogicalOp(BooleanExpression):
 class Negation(BooleanExpression):
     op: Literal["not"]
     expr: BooleanExpression
+
+
+@dataclass
+class Break(Statement):
+    ...
 
 
 @dataclass

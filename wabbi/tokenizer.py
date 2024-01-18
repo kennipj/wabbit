@@ -13,6 +13,7 @@ KEYWORDS = {
     "false": "BOOL",
     "or": "OR",
     "and": "AND",
+    "break": "BREAK",
 }
 
 ONE_CHAR_SYMBOLS = {

@@ -6,6 +6,7 @@ from wabbi.model import (
     Boolean,
     BooleanExpression,
     Branch,
+    Break,
     Call,
     ExprAsStatement,
     Expression,
@@ -74,6 +75,7 @@ class Parser:
             self.parse_branch,
             self.parse_func,
             self.parse_while,
+            self.parse_break,
             self.parse_expr_as_stmt,
         ]
         for func in to_try:
@@ -335,7 +337,7 @@ class Parser:
         rel = self.parse_boolexpr()
         self.expect("LBRACE", fatal=True)
         statements = self.parse_statements()
-        self.expect("RBRACE")
+        self.expect("RBRACE", fatal=True)
         return While(condition=rel, body=statements)
 
     def parse_branch(self) -> Branch:
@@ -343,13 +345,13 @@ class Parser:
         rel = self.parse_boolexpr()
         self.expect("LBRACE", fatal=True)
         statements = self.parse_statements()
-        self.expect("RBRACE")
+        self.expect("RBRACE", fatal=True)
         else_ = []
         if self.peek("ELSE"):
             self.expect("ELSE")
             self.expect("LBRACE")
             else_ = self.parse_statements()
-            self.expect("RBRACE")
+            self.expect("RBRACE", fatal=True)
         return Branch(condition=rel, body=statements, else_=else_)
 
     def parse_assignment(self) -> Assignment:
@@ -358,6 +360,11 @@ class Parser:
         expr = self.parse_expression()
         self.expect("SEMI", fatal=True)
         return Assignment(lhs=Name(value=name.value), rhs=expr)
+
+    def parse_break(self) -> Break:
+        self.expect("BREAK")
+        self.expect("SEMI")
+        return Break()
 
     def parse_name(self) -> Name:
         token = self.expect("NAME", fatal=False)

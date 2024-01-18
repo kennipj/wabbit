@@ -3,6 +3,7 @@ from wabbi.model import (
     BinOp,
     Boolean,
     Branch,
+    Break,
     Call,
     ExprAsStatement,
     Expression,
@@ -135,7 +136,7 @@ def res_expr(node: Expression, lines: Lines) -> str:
             raise ValueError(f"Unexpected expression: {node}")
 
 
-def out_stmt(node: Statement, lines: Lines) -> None:
+def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None:
     match node:
         case Assignment(lhs, rhs):
             res_rhs = res_expr(rhs, lines)
@@ -166,7 +167,7 @@ def out_stmt(node: Statement, lines: Lines) -> None:
 
             lines.extend([f"{lb}:"])
             with lines.indent():
-                any(out_stmt(stmt, lines) for stmt in body)
+                any(out_stmt(stmt, lines, break_to=le) for stmt in body)
                 lines.append(f"br label %{lt}")
 
             lines.extend([f"{le}:"])
@@ -180,11 +181,11 @@ def out_stmt(node: Statement, lines: Lines) -> None:
             lines.append(f"br i1 {test}, label %{lc}, label %{la}")
             lines.extend([f"{lc}:"])
             with lines.indent():
-                any(out_stmt(stmt, lines) for stmt in body)
+                any(out_stmt(stmt, lines, break_to=break_to) for stmt in body)
                 lines.append(f"br label %{lm}")
             lines.extend([f"{la}:"])
             with lines.indent():
-                any(out_stmt(stmt, lines) for stmt in else_)
+                any(out_stmt(stmt, lines, break_to=break_to) for stmt in else_)
                 lines.append(f"br label %{lm}")
             lines.extend([f"{lm}:"])
 
@@ -199,6 +200,11 @@ def out_stmt(node: Statement, lines: Lines) -> None:
                 lines.append("ret i32 0")
 
             lines.append("}")
+
+        case Break():
+            if not break_to:
+                raise SyntaxError("Break used outside of loop!")
+            lines.append(f"br label %{break_to}")
 
         case Return(expr):
             res = res_expr(expr, lines)

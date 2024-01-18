@@ -3,6 +3,7 @@ from wabbi.model import (
     BinOp,
     Boolean,
     Branch,
+    Break,
     Call,
     ExprAsStatement,
     Expression,
@@ -120,6 +121,9 @@ def fmt_stmt(node: Statement, lines: Lines) -> None:
 
         case Return(expr):
             lines.append(f"return {fmt_expr(expr)};")
+
+        case Break():
+            lines.append("break;")
 
         case ExprAsStatement(expr):
             lines.append(f"{expr};")

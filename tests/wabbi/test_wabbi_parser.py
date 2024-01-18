@@ -3,19 +3,25 @@ from utils import read_source
 from wabbi.model import (
     Assignment,
     BinOp,
+    Boolean,
     Branch,
+    Break,
     Call,
     ExprAsStatement,
     Function,
     Integer,
+    LogicalOp,
     Name,
+    Negation,
     Parenthesis,
     Print,
     Program,
+    RelationalOp,
     Return,
     UnaryOp,
     Variable,
     VariableDecl,
+    While,
 )
 from wabbi.parser import Parser
 from wabbi.tokenizer import tokenize
@@ -35,32 +41,44 @@ def test_passes_operator_test():
             Print(expr=BinOp(op="/", lhs=Name(value="y"), rhs=Name(value="x"))),
             Print(expr=UnaryOp(op="-", expr=Name(value="x"))),
             Branch(
-                condition=BinOp(op="<", lhs=Name(value="x"), rhs=Name(value="y")),
+                condition=RelationalOp(
+                    op="<", lhs=Name(value="x"), rhs=Name(value="y")
+                ),
                 body=[Print(expr=Integer(value=1))],
                 else_=[Print(expr=Integer(value=0))],
             ),
             Branch(
-                condition=BinOp(op="<=", lhs=Name(value="x"), rhs=Name(value="y")),
+                condition=RelationalOp(
+                    op="<=", lhs=Name(value="x"), rhs=Name(value="y")
+                ),
                 body=[Print(expr=Integer(value=1))],
                 else_=[Print(expr=Integer(value=0))],
             ),
             Branch(
-                condition=BinOp(op=">", lhs=Name(value="y"), rhs=Name(value="x")),
+                condition=RelationalOp(
+                    op=">", lhs=Name(value="y"), rhs=Name(value="x")
+                ),
                 body=[Print(expr=Integer(value=1))],
                 else_=[Print(expr=Integer(value=0))],
             ),
             Branch(
-                condition=BinOp(op=">=", lhs=Name(value="y"), rhs=Name(value="x")),
+                condition=RelationalOp(
+                    op=">=", lhs=Name(value="y"), rhs=Name(value="x")
+                ),
                 body=[Print(expr=Integer(value=1))],
                 else_=[Print(expr=Integer(value=0))],
             ),
             Branch(
-                condition=BinOp(op="==", lhs=Name(value="x"), rhs=Name(value="y")),
+                condition=RelationalOp(
+                    op="==", lhs=Name(value="x"), rhs=Name(value="y")
+                ),
                 body=[Print(expr=Integer(value=0))],
                 else_=[Print(expr=Integer(value=1))],
             ),
             Branch(
-                condition=BinOp(op="!=", lhs=Name(value="x"), rhs=Name(value="y")),
+                condition=RelationalOp(
+                    op="!=", lhs=Name(value="x"), rhs=Name(value="y")
+                ),
                 body=[Print(expr=Integer(value=1))],
                 else_=[Print(expr=Integer(value=0))],
             ),
@@ -78,7 +96,7 @@ def test_optional_else():
                 args=["x"],
                 body=[
                     Branch(
-                        condition=BinOp(
+                        condition=RelationalOp(
                             op="<", lhs=Name(value="x"), rhs=Integer(value=0)
                         ),
                         body=[Return(expr=UnaryOp(op="-", expr=Name(value="x")))],
@@ -140,5 +158,111 @@ def test_multiple_args():
             ),
             Function(name="g", args=[], body=[Return(expr=Integer(value=42))]),
             Print(expr=Call(name="g", args=[])),
+        ]
+    )
+
+
+def test_passes_logical_op_test():
+    source = read_source("test_logical.wb")
+    ast = Parser(tokenize(source)).parse()
+    assert ast == Program(
+        statements=[
+            Variable(name="x", expr=Integer(value=3)),
+            Variable(name="y", expr=Integer(value=10)),
+            Variable(name="z", expr=Integer(value=20)),
+            Branch(
+                condition=Boolean(value="true"),
+                body=[Print(expr=Integer(value=1))],
+                else_=[Print(expr=Integer(value=0))],
+            ),
+            Branch(
+                condition=Boolean(value="false"),
+                body=[Print(expr=Integer(value=0))],
+                else_=[Print(expr=Integer(value=1))],
+            ),
+            Branch(
+                condition=LogicalOp(
+                    op="and",
+                    lhs=RelationalOp(op="<", lhs=Name(value="x"), rhs=Name(value="y")),
+                    rhs=RelationalOp(op="<", lhs=Name(value="y"), rhs=Name(value="z")),
+                ),
+                body=[Print(expr=Integer(value=1))],
+                else_=[Print(expr=Integer(value=0))],
+            ),
+            Branch(
+                condition=LogicalOp(
+                    op="or",
+                    lhs=Negation(
+                        op="not",
+                        expr=RelationalOp(
+                            op="<", lhs=Name(value="x"), rhs=Name(value="y")
+                        ),
+                    ),
+                    rhs=Negation(
+                        op="not",
+                        expr=RelationalOp(
+                            op="<", lhs=Name(value="y"), rhs=Name(value="z")
+                        ),
+                    ),
+                ),
+                body=[Print(expr=Integer(value=0))],
+                else_=[Print(expr=Integer(value=1))],
+            ),
+            Branch(
+                condition=LogicalOp(
+                    op="or",
+                    lhs=RelationalOp(op="<", lhs=Name(value="x"), rhs=Integer(value=0)),
+                    rhs=RelationalOp(
+                        op=">", lhs=Name(value="z"), rhs=Integer(value=30)
+                    ),
+                ),
+                body=[Print(expr=Integer(value=0))],
+                else_=[Print(expr=Integer(value=1))],
+            ),
+            Branch(
+                condition=LogicalOp(
+                    op="or",
+                    lhs=Negation(
+                        op="not",
+                        expr=RelationalOp(
+                            op="<", lhs=Name(value="x"), rhs=Integer(value=0)
+                        ),
+                    ),
+                    rhs=RelationalOp(
+                        op=">", lhs=Name(value="z"), rhs=Integer(value=30)
+                    ),
+                ),
+                body=[Print(expr=Integer(value=1))],
+                else_=[Print(expr=Integer(value=0))],
+            ),
+        ]
+    )
+
+
+def test_break():
+    source = read_source("test_break.wb")
+    ast = Parser(tokenize(source)).parse()
+    assert ast == Program(
+        statements=[
+            Variable(name="n", expr=Integer(value=0)),
+            While(
+                condition=RelationalOp(
+                    op="==", lhs=Integer(value=0), rhs=Integer(value=0)
+                ),
+                body=[
+                    Print(expr=Name(value="n")),
+                    Assignment(
+                        lhs=Name(value="n"),
+                        rhs=BinOp(op="+", lhs=Name(value="n"), rhs=Integer(value=1)),
+                    ),
+                    Branch(
+                        condition=RelationalOp(
+                            op="==", lhs=Name(value="n"), rhs=Integer(value=10)
+                        ),
+                        body=[Break()],
+                        else_=[],
+                    ),
+                ],
+            ),
         ]
     )
