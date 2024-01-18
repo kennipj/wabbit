@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from typer import Typer
 
+from wabbi.bracecheck import validate_braces
 from wabbi.deinit import deinit_variables
 from wabbi.fold_constants import fold_constants
 from wabbi.format import format_program
@@ -105,7 +106,9 @@ def _simplify_tree(ast: Program):
 def _to_ast(file: str) -> Program:
     with open(file) as f:
         source = f.read()
-    return Parser(_tokenize(source), source, file).parse()
+    tokens = _tokenize(source, file)
+    validate_braces(tokens, source, file)
+    return Parser(tokens, source, file).parse()
 
 
 if __name__ == "__main__":

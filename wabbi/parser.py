@@ -398,6 +398,4 @@ class Parser:
         return ErrorExpr(err=err)
 
     def _make_err(self, token: Token, msg: str) -> WabbitSyntaxError:
-        return WabbitSyntaxError(
-            msg, self.fname, self.source, token.lineno, token.column, len(token)
-        )
+        return WabbitSyntaxError.from_token(msg, self.fname, self.source, token)

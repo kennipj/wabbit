@@ -38,5 +38,29 @@
             "console": "integratedTerminal",
             "justMyCode": false
         },
+        {
+            "name": "Python: Wab Tokenize",
+            "type": "python",
+            "request": "launch",
+            "module": "wabbi.main",
+            "args": [
+                "tokenize",
+                "badwabbit.wb",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Python: Wab AST",
+            "type": "python",
+            "request": "launch",
+            "module": "wabbi.main",
+            "args": [
+                "ast",
+                "badwabbit.wb",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
     ]
 }
