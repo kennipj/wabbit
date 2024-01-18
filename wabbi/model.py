@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from wabbi.exceptions import WabbitSyntaxError
+
 
 @dataclass
 class Node:
@@ -156,6 +158,11 @@ class Negation(BooleanExpression):
 @dataclass
 class Break(Statement):
     ...
+
+
+@dataclass
+class ErrorExpr(Expression):
+    err: WabbitSyntaxError
 
 
 @dataclass

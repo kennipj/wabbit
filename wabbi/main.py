@@ -14,6 +14,7 @@ from wabbi.parser import Parser
 from wabbi.resolve import resolve_scopes
 from wabbi.tokenizer import tokenize as _tokenize
 from wabbi.unscript import unscript_toplevel
+from wabbi.validator import validate_ast
 
 app = Typer()
 
@@ -83,7 +84,7 @@ def ast(
 def tokenize(file: str) -> None:
     with open(file) as f:
         source = f.read()
-    pprint(_tokenize(source))
+    pprint(_tokenize(source, file))
 
 
 def _compile_to_llvm(path: str):
@@ -93,6 +94,7 @@ def _compile_to_llvm(path: str):
 
 
 def _simplify_tree(ast: Program):
+    ast = validate_ast(ast)
     ast = fold_constants(ast)
     ast = deinit_variables(ast)
     ast = resolve_scopes(ast)
@@ -103,7 +105,7 @@ def _simplify_tree(ast: Program):
 def _to_ast(file: str) -> Program:
     with open(file) as f:
         source = f.read()
-    return Parser(_tokenize(source)).parse()
+    return Parser(_tokenize(source), source, file).parse()
 
 
 if __name__ == "__main__":

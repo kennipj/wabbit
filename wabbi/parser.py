@@ -1,5 +1,7 @@
+from functools import partial
 from typing import Literal, cast
 
+from wabbi.exceptions import WabbitSyntaxError
 from wabbi.model import (
     Assignment,
     BinOp,
@@ -8,6 +10,7 @@ from wabbi.model import (
     Branch,
     Break,
     Call,
+    ErrorExpr,
     ExprAsStatement,
     Expression,
     Function,
@@ -30,10 +33,13 @@ from wabbi.tokenizer import Token
 
 
 class Parser:
-    def __init__(self, tokens: list[Token]) -> None:
+    def __init__(
+        self, tokens: list[Token], source: str, fname: str = "file.wb"
+    ) -> None:
         self.tokens = tokens
         self.idx = 0
-        self.excluded_expressions = set()
+        self.source = source
+        self.fname = fname
 
     def expect(self, type_: str, fatal: bool = False) -> Token:
         token = self.tokens[self.idx]
@@ -64,7 +70,7 @@ class Parser:
                 break
         return statements
 
-    def parse_statement(self) -> Statement | None:
+    def parse_statement(self, err: WabbitSyntaxError | None = None) -> Statement | None:
         start = self.idx
         to_try = [
             self.parse_assignment,
@@ -76,7 +82,7 @@ class Parser:
             self.parse_func,
             self.parse_while,
             self.parse_break,
-            self.parse_expr_as_stmt,
+            partial(self.parse_expr_as_stmt, err),
         ]
         for func in to_try:
             try:
@@ -85,12 +91,14 @@ class Parser:
                 self.idx = start
         return None
 
-    def parse_expr_as_stmt(self) -> ExprAsStatement:
+    def parse_expr_as_stmt(
+        self, err: WabbitSyntaxError | None = None
+    ) -> ExprAsStatement:
         expr = self.parse_expression()
         self.expect("SEMI")
         return ExprAsStatement(expr=expr)
 
-    def parse_expression(self) -> Expression:
+    def parse_expression(self, err: WabbitSyntaxError | None = None) -> Expression:
         start = self.idx
         to_try = [
             self.parse_add,
@@ -98,6 +106,7 @@ class Parser:
             self.parse_sub,
             self.parse_div,
             self.parse_term,
+            partial(self.parse_errorexpr, err),
         ]
         for func in to_try:
             try:
@@ -106,7 +115,7 @@ class Parser:
                 self.idx = start
         raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
 
-    def parse_term(self) -> Expression:
+    def parse_term(self, err: WabbitSyntaxError | None = None) -> Expression:
         start = self.idx
         to_try = [
             self.parse_parenthesis,
@@ -114,6 +123,7 @@ class Parser:
             self.parse_call,
             self.parse_name,
             self.parse_integer,
+            partial(self.parse_errorexpr, err),
         ]
         for func in to_try:
             try:
@@ -122,9 +132,14 @@ class Parser:
                 self.idx = start
         raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
 
-    def parse_boolexpr(self) -> BooleanExpression:
+    def parse_boolexpr(self, err: WabbitSyntaxError | None = None) -> BooleanExpression:
         start = self.idx
-        to_try = [self.parse_or, self.parse_and, self.parse_bool_term]
+        to_try = [
+            self.parse_or,
+            self.parse_and,
+            self.parse_bool_term,
+            partial(self.parse_errorexpr, err),
+        ]
         for func in to_try:
             try:
                 return func()
@@ -132,7 +147,9 @@ class Parser:
                 self.idx = start
         raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
 
-    def parse_bool_term(self) -> BooleanExpression:
+    def parse_bool_term(
+        self, err: WabbitSyntaxError | None = None
+    ) -> BooleanExpression:
         start = self.idx
         to_try = [
             self.parse_lt,
@@ -143,6 +160,7 @@ class Parser:
             self.parse_neq,
             self.parse_not,
             self.parse_bool,
+            partial(self.parse_errorexpr, err),
         ]
         for func in to_try:
             try:
@@ -211,8 +229,12 @@ class Parser:
         rhs = self.parse_expression()
         return RelationalOp(op=">=", lhs=lhs, rhs=rhs)
 
-    def parse_eq(self) -> RelationalOp:
+    def parse_eq(self) -> Expression:
         lhs = self.parse_expression()
+        if tok := self.peek("ASSIGN"):
+            self.idx += 1
+            self.parse_expression()
+            return ErrorExpr(self._make_err(tok, "Unexpected `=`. Did you mean `==`?"))
         self.expect("EQ")
         rhs = self.parse_expression()
         return RelationalOp(op="==", lhs=lhs, rhs=rhs)
@@ -369,3 +391,13 @@ class Parser:
     def parse_name(self) -> Name:
         token = self.expect("NAME", fatal=False)
         return Name(token.value)
+
+    def parse_errorexpr(self, err: WabbitSyntaxError | None) -> ErrorExpr:
+        if not err:
+            raise SyntaxError("Unhandled exception!")
+        return ErrorExpr(err=err)
+
+    def _make_err(self, token: Token, msg: str) -> WabbitSyntaxError:
+        return WabbitSyntaxError(
+            msg, self.fname, self.source, token.lineno, token.column, len(token)
+        )

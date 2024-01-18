@@ -7,7 +7,7 @@ from wabbi.tokenizer import tokenize
 def to_ast(program: str) -> Program:
     with open(f"wabbi/tests/{program}") as f:
         source = f.read()
-    return Parser(tokenize(source)).parse()
+    return Parser(tokenize(source), source).parse()
 
 
 def test_formats_optional_else():
