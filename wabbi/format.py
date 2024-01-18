@@ -12,7 +12,9 @@ from wabbi.model import (
     Integer,
     LocalName,
     LocalVar,
+    LogicalOp,
     Name,
+    Negation,
     Parenthesis,
     Print,
     Program,
@@ -48,7 +50,7 @@ def fmt_expr(node: Expression) -> str:
         case Integer(value):
             return str(value)
 
-        case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs):
+        case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs) | LogicalOp(op, lhs, rhs):
             return f"{fmt_expr(lhs)} {op} {fmt_expr(rhs)}"
 
         case UnaryOp(op, expr):
@@ -63,6 +65,9 @@ def fmt_expr(node: Expression) -> str:
 
         case Boolean(value):
             return value
+
+        case Negation(op, expr):
+            return f"{op} {fmt_expr(expr)}"
 
         case _:
             raise ValueError(f"Unexpected expression: {node}")

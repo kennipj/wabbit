@@ -42,8 +42,8 @@ class BinOp(Expression):
 @dataclass
 class RelationalOp(Expression):
     op: Literal["==", "<", ">", "<=", ">=", "!="]
-    rhs: Expression
     lhs: Expression
+    rhs: Expression
 
 
 @dataclass
@@ -136,8 +136,21 @@ class ExprAsStatement(Statement):
 
 
 @dataclass
-class Boolean(Expression):
+class Boolean(BooleanExpression):
     value: Literal["true", "false"]
+
+
+@dataclass
+class LogicalOp(BooleanExpression):
+    op: Literal["and", "or"]
+    lhs: BooleanExpression
+    rhs: BooleanExpression
+
+
+@dataclass
+class Negation(BooleanExpression):
+    op: Literal["not"]
+    expr: BooleanExpression
 
 
 @dataclass

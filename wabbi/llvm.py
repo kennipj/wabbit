@@ -12,7 +12,9 @@ from wabbi.model import (
     Integer,
     LocalName,
     LocalVar,
+    LogicalOp,
     Name,
+    Negation,
     Parenthesis,
     Print,
     Program,
@@ -56,6 +58,19 @@ def out_name(node: Name) -> str:
 def res_expr(node: Expression, lines: Lines) -> str:
     literals = {Integer, Name, LocalName, GlobalName}
     match node:
+        case LogicalOp(op, lhs, rhs):
+            lhs_res = res_expr(lhs, lines)
+            rhs_res = res_expr(rhs, lines)
+            id_ = gensym()
+            lines.append(f"%{id_} = {op} i1 {lhs_res}, {rhs_res}")
+            return f"%{id_}"
+
+        case Negation(op, expr):
+            res = res_expr(expr, lines)
+            id_ = gensym()
+            lines.append(f"%{id_} = xor i1 1, {res}")
+            return f"%{id_}"
+
         case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs):
             lhs_res = res_expr(lhs, lines) if type(node) not in literals else lhs
             rhs_res = res_expr(rhs, lines) if type(node) not in literals else rhs

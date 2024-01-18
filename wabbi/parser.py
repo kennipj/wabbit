@@ -11,7 +11,9 @@ from wabbi.model import (
     Expression,
     Function,
     Integer,
+    LogicalOp,
     Name,
+    Negation,
     Parenthesis,
     Print,
     Program,
@@ -120,14 +122,25 @@ class Parser:
 
     def parse_boolexpr(self) -> BooleanExpression:
         start = self.idx
+        to_try = [self.parse_or, self.parse_and, self.parse_bool_term]
+        for func in to_try:
+            try:
+                return func()
+            except SyntaxError:
+                self.idx = start
+        raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
+
+    def parse_bool_term(self) -> BooleanExpression:
+        start = self.idx
         to_try = [
-            self.parse_bool,
             self.parse_lt,
             self.parse_gt,
             self.parse_lte,
             self.parse_gte,
             self.parse_eq,
             self.parse_neq,
+            self.parse_not,
+            self.parse_bool,
         ]
         for func in to_try:
             try:
@@ -135,6 +148,23 @@ class Parser:
             except SyntaxError:
                 self.idx = start
         raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
+
+    def parse_or(self) -> LogicalOp:
+        lhs = self.parse_bool_term()
+        self.expect("OR")
+        rhs = self.parse_bool_term()
+        return LogicalOp(op="or", lhs=lhs, rhs=rhs)
+
+    def parse_and(self) -> LogicalOp:
+        lhs = self.parse_bool_term()
+        self.expect("AND")
+        rhs = self.parse_bool_term()
+        return LogicalOp(op="and", lhs=lhs, rhs=rhs)
+
+    def parse_not(self) -> Negation:
+        self.expect("NOT")
+        rhs = self.parse_bool_term()
+        return Negation(op="not", expr=rhs)
 
     def parse_bool(self) -> Boolean:
         bool = self.expect("BOOL")

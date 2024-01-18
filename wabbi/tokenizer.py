@@ -11,6 +11,8 @@ KEYWORDS = {
     "not": "NOT",
     "true": "BOOL",
     "false": "BOOL",
+    "or": "OR",
+    "and": "AND",
 }
 
 ONE_CHAR_SYMBOLS = {
