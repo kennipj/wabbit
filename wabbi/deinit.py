@@ -14,8 +14,10 @@ class DeinitVisitor(Visitor):
             raise SyntaxError(f"Redeclaration of existing variable {node.name}")
         self._vars.add(node.name)
         return [
-            VariableDecl(name=node.name),
-            Assignment(lhs=Name(node.name), rhs=node.expr),
+            VariableDecl(name=node.name, loc=node.loc),
+            Assignment(
+                lhs=Name(value=node.name, loc=node.loc), rhs=node.expr, loc=node.loc
+            ),
         ]
 
 

@@ -5,8 +5,15 @@ from wabbi.exceptions import WabbitSyntaxError
 
 
 @dataclass
+class SourceLoc:
+    lineno: int
+    start: int
+    end: int
+
+
+@dataclass
 class Node:
-    ...
+    loc: SourceLoc
 
 
 @dataclass

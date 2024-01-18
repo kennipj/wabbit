@@ -128,8 +128,8 @@ def tokenize_alpha(start: int, source: str, lineno: int, last_line_pos: int) -> 
         n += 1
     word = source[start:n]
     if word in KEYWORDS:
-        return Token(KEYWORDS[word], word, lineno, n - last_line_pos)
-    return Token("NAME", word, lineno, n - last_line_pos)
+        return Token(KEYWORDS[word], word, lineno, start - last_line_pos)
+    return Token("NAME", word, lineno, start - last_line_pos)
 
 
 def tokenize_digit(start: int, source: str, lineno: int, last_line_pos: int) -> Token:
@@ -138,7 +138,7 @@ def tokenize_digit(start: int, source: str, lineno: int, last_line_pos: int) -> 
         if not source[n].isdigit():
             break
         n += 1
-    return Token("INTEGER", source[start:n], lineno, n - last_line_pos)
+    return Token("INTEGER", source[start:n], lineno, start - last_line_pos)
 
 
 def skip_line(start: int, source: str) -> int:

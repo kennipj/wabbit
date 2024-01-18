@@ -43,19 +43,19 @@ class ResolveScopes(Visitor):
     def visit_variabledecl(self, node: VariableDecl) -> VariableDecl:
         self._varnames.add(node.name)
         if self._scope_level > 0:
-            return LocalVar(node.name)
+            return LocalVar(name=node.name, loc=node.loc)
         self._globals.add(node.name)
-        return GlobalVar(node.name)
+        return GlobalVar(name=node.name, loc=node.loc)
 
     def visit_name(self, node: Name) -> Name:
         if node.value not in self._varnames:
             raise SyntaxError(f"Encountered undeclared variable {node.value}.")
 
         if node.value in self._globals:
-            return GlobalName(value=node.value)
+            return GlobalName(value=node.value, loc=node.loc)
         if self._scope_level > 0:
-            return LocalName(value=node.value)
-        return GlobalName(value=node.value)
+            return LocalName(value=node.value, loc=node.loc)
+        return GlobalName(value=node.value, loc=node.loc)
 
 
 def resolve_scopes(program: Program) -> Program:

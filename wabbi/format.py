@@ -39,36 +39,36 @@ def format_program(program: Program) -> str:
 
 def fmt_expr(node: Expression) -> str:
     match node:
-        case LocalName(value):
-            return f"local[{value}]"
+        case LocalName():
+            return f"local[{node.value}]"
 
-        case GlobalName(value):
-            return f"global[{value}]"
+        case GlobalName():
+            return f"global[{node.value}]"
 
-        case Name(value):
-            return value
+        case Name():
+            return node.value
 
-        case Integer(value):
-            return str(value)
+        case Integer():
+            return str(node.value)
 
-        case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs) | LogicalOp(op, lhs, rhs):
-            return f"{fmt_expr(lhs)} {op} {fmt_expr(rhs)}"
+        case BinOp() | RelationalOp() | LogicalOp():
+            return f"{fmt_expr(node.lhs)} {node.op} {fmt_expr(node.rhs)}"
 
-        case UnaryOp(op, expr):
-            return f"{op}{fmt_expr(expr)}"
+        case UnaryOp():
+            return f"{node.op}{fmt_expr(node.expr)}"
 
-        case Parenthesis(expr):
-            return f"({fmt_expr(expr)})"
+        case Parenthesis():
+            return f"({fmt_expr(node.expr)})"
 
-        case Call(name, args):
-            formatted_args = ", ".join(fmt_expr(arg) for arg in args)
-            return f"{name}({formatted_args})"
+        case Call():
+            formatted_args = ", ".join(fmt_expr(arg) for arg in node.args)
+            return f"{node.name}({formatted_args})"
 
-        case Boolean(value):
-            return value
+        case Boolean():
+            return node.value
 
-        case Negation(op, expr):
-            return f"{op} {fmt_expr(expr)}"
+        case Negation():
+            return f"{node.op} {fmt_expr(node.expr)}"
 
         case _:
             raise ValueError(f"Unexpected expression: {node}")
@@ -76,57 +76,57 @@ def fmt_expr(node: Expression) -> str:
 
 def fmt_stmt(node: Statement, lines: Lines) -> None:
     match node:
-        case Assignment(lhs, rhs):
-            lines.append(f"{fmt_expr(lhs)} = {fmt_expr(rhs)};")
+        case Assignment():
+            lines.append(f"{fmt_expr(node.lhs)} = {fmt_expr(node.rhs)};")
 
-        case Variable(name, expr):
-            lines.append(f"var {name} = {fmt_expr(expr)};")
+        case Variable():
+            lines.append(f"var {node.name} = {fmt_expr(node.expr)};")
 
-        case GlobalVar(name):
-            lines.append(f"global {name};")
+        case GlobalVar():
+            lines.append(f"global {node.name};")
 
-        case LocalVar(name):
-            lines.append(f"local {name};")
+        case LocalVar():
+            lines.append(f"local {node.name};")
 
-        case VariableDecl(name):
-            lines.append(f"var {name};")
+        case VariableDecl():
+            lines.append(f"var {node.name};")
 
-        case Print(expr):
-            lines.append(f"print {fmt_expr(expr)};")
+        case Print():
+            lines.append(f"print {fmt_expr(node.expr)};")
 
-        case While(condition, body):
-            lines.append(f"while {fmt_expr(condition)} {{")
-            with lines.indent():
-                any(fmt_stmt(stmt, lines) for stmt in body)
-            lines.append("}")
-
-        case Branch(condition, body, else_):
-            lines.append(f"if {fmt_expr(condition)} {{")
-            with lines.indent():
-                any(fmt_stmt(stmt, lines) for stmt in body)
-
-            if else_:
-                lines.append("} else {")
-                with lines.indent():
-                    any(fmt_stmt(stmt, lines) for stmt in else_)
-
-            lines.append("}")
-
-        case Function(name, args):
-            formatted_args = ", ".join(arg for arg in args)
-            lines.append(f"func {name}({formatted_args}) {{")
+        case While():
+            lines.append(f"while {fmt_expr(node.condition)} {{")
             with lines.indent():
                 any(fmt_stmt(stmt, lines) for stmt in node.body)
             lines.append("}")
 
-        case Return(expr):
-            lines.append(f"return {fmt_expr(expr)};")
+        case Branch():
+            lines.append(f"if {fmt_expr(node.condition)} {{")
+            with lines.indent():
+                any(fmt_stmt(stmt, lines) for stmt in node.body)
+
+            if node.else_:
+                lines.append("} else {")
+                with lines.indent():
+                    any(fmt_stmt(stmt, lines) for stmt in node.else_)
+
+            lines.append("}")
+
+        case Function():
+            formatted_args = ", ".join(arg for arg in node.args)
+            lines.append(f"func {node.name}({formatted_args}) {{")
+            with lines.indent():
+                any(fmt_stmt(stmt, lines) for stmt in node.body)
+            lines.append("}")
+
+        case Return():
+            lines.append(f"return {fmt_expr(node.expr)};")
 
         case Break():
             lines.append("break;")
 
-        case ExprAsStatement(expr):
-            lines.append(f"{expr};")
+        case ExprAsStatement():
+            lines.append(f"{node.expr};")
 
         case _:
             raise ValueError(f"Unexpected statement: {node}")

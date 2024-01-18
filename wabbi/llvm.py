@@ -48,10 +48,10 @@ def generate_llvm(program: Program) -> str:
 
 def out_name(node: Name) -> str:
     match node:
-        case GlobalName(name):
-            return f"@{name}"
-        case LocalName(name):
-            return f"%{name}"
+        case GlobalName():
+            return f"@{node.value}"
+        case LocalName():
+            return f"%{node.value}"
         case _:
             raise ValueError(f"Unexpected name: {node}")
 
@@ -59,24 +59,28 @@ def out_name(node: Name) -> str:
 def res_expr(node: Expression, lines: Lines) -> str:
     literals = {Integer, Name, LocalName, GlobalName}
     match node:
-        case LogicalOp(op, lhs, rhs):
-            lhs_res = res_expr(lhs, lines)
-            rhs_res = res_expr(rhs, lines)
+        case LogicalOp():
+            lhs_res = res_expr(node.lhs, lines)
+            rhs_res = res_expr(node.rhs, lines)
             id_ = gensym()
-            lines.append(f"%{id_} = {op} i1 {lhs_res}, {rhs_res}")
+            lines.append(f"%{id_} = {node.op} i1 {lhs_res}, {rhs_res}")
             return f"%{id_}"
 
-        case Negation(op, expr):
-            res = res_expr(expr, lines)
+        case Negation():
+            res = res_expr(node.expr, lines)
             id_ = gensym()
             lines.append(f"%{id_} = xor i1 1, {res}")
             return f"%{id_}"
 
-        case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs):
-            lhs_res = res_expr(lhs, lines) if type(node) not in literals else lhs
-            rhs_res = res_expr(rhs, lines) if type(node) not in literals else rhs
+        case BinOp() | RelationalOp():
+            lhs_res = (
+                res_expr(node.lhs, lines) if type(node) not in literals else node.lhs
+            )
+            rhs_res = (
+                res_expr(node.rhs, lines) if type(node) not in literals else node.rhs
+            )
             id_ = gensym()
-            match op:
+            match node.op:
                 case "+":
                     lines.append(f"%{id_} = add i32 {lhs_res}, {rhs_res}")
                 case "*":
@@ -99,37 +103,37 @@ def res_expr(node: Expression, lines: Lines) -> str:
                     lines.append(f"%{id_} = icmp ne i32 {lhs_res}, {rhs_res}")
             return f"%{id_}"
 
-        case Boolean(value):
-            return "1" if value == "true" else "0"
+        case Boolean():
+            return "1" if node.value == "true" else "0"
 
-        case UnaryOp(op, expr):
-            res = res_expr(expr, lines)
+        case UnaryOp():
+            res = res_expr(node.expr, lines)
             id_ = gensym()
             lines.append(f"%{id_} = sub i32 0, {res}")
             return f"%{id_}"
 
-        case Parenthesis(expr):
-            return res_expr(expr, lines)
+        case Parenthesis():
+            return res_expr(node.expr, lines)
 
-        case Call(name, args):
-            args_res = ", ".join([f"i32 {res_expr(arg, lines)}" for arg in args])
-            arg_types = ", ".join("i32" for _ in range(len(args)))
+        case Call():
+            args_res = ", ".join([f"i32 {res_expr(arg, lines)}" for arg in node.args])
+            arg_types = ", ".join("i32" for _ in range(len(node.args)))
             id_ = gensym()
 
-            lines.append(f"%{id_} = call i32 ({arg_types}) @{name}({args_res})")
+            lines.append(f"%{id_} = call i32 ({arg_types}) @{node.name}({args_res})")
             return f"%{id_}"
 
-        case Integer(value):
-            return str(value)
+        case Integer():
+            return str(node.value)
 
-        case LocalName(value):
+        case LocalName():
             id_ = gensym()
-            lines.append(f"%{id_} = load i32, i32* %{value}")
+            lines.append(f"%{id_} = load i32, i32* %{node.value}")
             return f"%{id_}"
 
-        case GlobalName(value):
+        case GlobalName():
             id_ = gensym()
-            lines.append(f"%{id_} = load i32, i32* @{value}")
+            lines.append(f"%{id_} = load i32, i32* @{node.value}")
             return f"%{id_}"
 
         case _:
@@ -138,23 +142,25 @@ def res_expr(node: Expression, lines: Lines) -> str:
 
 def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None:
     match node:
-        case Assignment(lhs, rhs):
-            res_rhs = res_expr(rhs, lines)
-            lines.append(f"store i32 {res_rhs}, i32* {out_name(lhs)}")
+        case Assignment():
+            res_rhs = res_expr(node.rhs, lines)
+            lines.append(f"store i32 {res_rhs}, i32* {out_name(node.lhs)}")
 
-        case Variable(name, expr):
+        case Variable():
             raise ValueError("Unexpected Variable - AST not full compiled.")
 
-        case GlobalVar(name):
-            lines.append(f"@{name} = global i32 0")
+        case GlobalVar():
+            lines.append(f"@{node.name} = global i32 0")
 
-        case LocalVar(name):
-            lines.append(f"%{name} = alloca i32")
+        case LocalVar():
+            lines.append(f"%{node.name} = alloca i32")
 
-        case Print(expr):
-            lines.append(f"call i32 (i32) @_print_int(i32 {res_expr(expr, lines)})")
+        case Print():
+            lines.append(
+                f"call i32 (i32) @_print_int(i32 {res_expr(node.expr, lines)})"
+            )
 
-        case While(condition, body):
+        case While():
             lt = gensym()
             lb = gensym()
             le = gensym()
@@ -162,18 +168,18 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
 
             lines.extend([f"{lt}:"])
             with lines.indent():
-                test = res_expr(condition, lines)
+                test = res_expr(node.condition, lines)
                 lines.append(f"br i1 {test}, label %{lb}, label %{le}")
 
             lines.extend([f"{lb}:"])
             with lines.indent():
-                any(out_stmt(stmt, lines, break_to=le) for stmt in body)
+                any(out_stmt(stmt, lines, break_to=le) for stmt in node.body)
                 lines.append(f"br label %{lt}")
 
             lines.extend([f"{le}:"])
 
-        case Branch(condition, body, else_):
-            test = res_expr(condition, lines)
+        case Branch():
+            test = res_expr(node.condition, lines)
             lc = gensym()
             la = gensym()
             lm = gensym()
@@ -181,22 +187,22 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
             lines.append(f"br i1 {test}, label %{lc}, label %{la}")
             lines.extend([f"{lc}:"])
             with lines.indent():
-                any(out_stmt(stmt, lines, break_to=break_to) for stmt in body)
+                any(out_stmt(stmt, lines, break_to=break_to) for stmt in node.body)
                 lines.append(f"br label %{lm}")
             lines.extend([f"{la}:"])
             with lines.indent():
-                any(out_stmt(stmt, lines, break_to=break_to) for stmt in else_)
+                any(out_stmt(stmt, lines, break_to=break_to) for stmt in node.else_)
                 lines.append(f"br label %{lm}")
             lines.extend([f"{lm}:"])
 
-        case Function(name, args, body):
-            res_args = ", ".join(f"i32 %.a{n}" for n in range(len(args)))
-            lines.append(f"define i32 @{name}({res_args}) {{")
+        case Function():
+            res_args = ", ".join(f"i32 %.a{n}" for n in range(len(node.args)))
+            lines.append(f"define i32 @{node.name}({res_args}) {{")
             with lines.indent():
-                for idx, arg in enumerate(args):
+                for idx, arg in enumerate(node.args):
                     lines.append(f"%{arg} = alloca i32")
                     lines.append(f"store i32 %.a{idx}, i32* %{arg}")
-                any(out_stmt(stmt, lines) for stmt in body)
+                any(out_stmt(stmt, lines) for stmt in node.body)
                 lines.append("ret i32 0")
 
             lines.append("}")
@@ -206,12 +212,12 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
                 raise SyntaxError("Break used outside of loop!")
             lines.append(f"br label %{break_to}")
 
-        case Return(expr):
-            res = res_expr(expr, lines)
+        case Return():
+            res = res_expr(node.expr, lines)
             lines.append(f"ret i32 {res}")
 
-        case ExprAsStatement(expr):
-            res_expr(expr, lines)
+        case ExprAsStatement():
+            res_expr(node.expr, lines)
 
         case _:
             raise ValueError(f"Unexpected statement: {node}")

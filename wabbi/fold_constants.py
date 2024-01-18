@@ -22,12 +22,12 @@ class FoldConstants(Visitor):
             rhs_val = node.rhs.value
 
         if lhs_val is not None and rhs_val is not None:
-            return Integer(value=eval(f"{lhs_val} {node.op} {rhs_val}"))
+            return Integer(value=eval(f"{lhs_val} {node.op} {rhs_val}"), loc=node.loc)
         return node
 
     def visit_parenthesis(self, node: Parenthesis) -> Integer | Parenthesis:
         if isinstance(node.expr, Integer):
-            return Integer(node.expr.value)
+            return Integer(value=node.expr.value, loc=node.loc)
         return node
 
 

@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from wabbi.exceptions import WabbitSyntaxError
 from wabbi.tokenizer import Token
 
