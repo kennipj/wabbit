@@ -64,6 +64,8 @@ class Parser:
         return Program(
             statements=statements,
             loc=SourceLoc(lineno=0, start=0, end=len(self.source)),
+            source=self.source,
+            fname=self.fname,
         )
 
     def parse_statements(self) -> list[Statement]:
@@ -534,7 +536,7 @@ class Parser:
     def parse_errorexpr(self, err: WabbitSyntaxError | None) -> ErrorExpr:
         if not err:
             raise SyntaxError("Unhandled exception!")
-        return ErrorExpr(err=err, loc=SourceLoc(err.lineno, err.column, err.length))
+        return ErrorExpr(err=err, loc=SourceLoc(err.lineno, err.start, err.end))
 
     def _make_err(self, token: Token, msg: str) -> WabbitSyntaxError:
         return WabbitSyntaxError.from_token(msg, self.fname, self.source, token)

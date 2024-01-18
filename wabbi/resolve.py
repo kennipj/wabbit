@@ -1,5 +1,6 @@
 from typing import cast
 
+from wabbi.exceptions import WabbitSyntaxError
 from wabbi.model import (
     Branch,
     Function,
@@ -17,12 +18,13 @@ from wabbi.walker import Visitor, Walker
 
 
 class ResolveScopes(Visitor):
-    def __init__(self, to_visit: list[type[Node]]) -> None:
+    def __init__(self, to_visit: list[type[Node]], source: str, fname: str) -> None:
+        self.errors = []
         self._visit_status: dict[int, bool] = {}
         self._globals = set()
         self._varnames = set()
         self._scope_level = 0
-        super().__init__(to_visit)
+        super().__init__(to_visit, source, fname)
 
     def visit_function(self, node: Function) -> Function:
         self._varnames.update({arg for arg in node.args})
@@ -49,7 +51,16 @@ class ResolveScopes(Visitor):
 
     def visit_name(self, node: Name) -> Name:
         if node.value not in self._varnames:
-            raise SyntaxError(f"Encountered undeclared variable {node.value}.")
+            self.errors.append(
+                WabbitSyntaxError(
+                    msg=f"Undeclared variable: `{node.value}`.",
+                    source=self.source,
+                    fname=self.fname,
+                    lineno=node.loc.lineno,
+                    start=node.loc.start,
+                    end=node.loc.end,
+                )
+            )
 
         if node.value in self._globals:
             return GlobalName(value=node.value, loc=node.loc)
@@ -59,5 +70,12 @@ class ResolveScopes(Visitor):
 
 
 def resolve_scopes(program: Program) -> Program:
-    walker = Walker(ResolveScopes([VariableDecl, Branch, While, Function, Name]))
+    visitor = ResolveScopes(
+        [VariableDecl, Branch, While, Function, Name], program.source, program.fname
+    )
+    walker = Walker(visitor)
+    if visitor.errors:
+        for err in visitor.errors:
+            print(err)
+        exit()
     return cast(Program, walker.traverse(program, direction="both"))

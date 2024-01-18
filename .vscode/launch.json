@@ -56,8 +56,8 @@
             "request": "launch",
             "module": "wabbi.main",
             "args": [
-                "ast",
-                "badwabbit.wb",
+                "llvm",
+                "wabbi/tests/test_localscope.wb",
             ],
             "console": "integratedTerminal",
             "justMyCode": false

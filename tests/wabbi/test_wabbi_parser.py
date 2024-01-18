@@ -32,6 +32,8 @@ def test_passes_operator_test():
     source = read_source("test_operators.wb")
     ast = Parser(tokenize(source), source).parse()
     assert ast == Program(
+        source=source,
+        fname="file.wb",
         loc=SourceLoc(lineno=0, start=0, end=520),
         statements=[
             Variable(
@@ -255,6 +257,8 @@ def test_optional_else():
     source = read_source("test_else.wb")
     ast = Parser(tokenize(source), source).parse()
     assert ast == Program(
+        source=source,
+        fname="file.wb",
         loc=SourceLoc(lineno=0, start=0, end=128),
         statements=[
             Function(
@@ -327,6 +331,8 @@ def test_optional_value():
     source = read_source("test_optvalue.wb")
     ast = Parser(tokenize(source), source).parse()
     assert ast == Program(
+        source=source,
+        fname="file.wb",
         loc=SourceLoc(lineno=0, start=0, end=138),
         statements=[
             VariableDecl(loc=SourceLoc(lineno=2, start=1, end=6), name="x"),
@@ -362,6 +368,8 @@ def test_multiple_args():
     source = read_source("test_multiple.wb")
     ast = Parser(tokenize(source), source).parse()
     assert ast == Program(
+        source=source,
+        fname="file.wb",
         loc=SourceLoc(lineno=0, start=0, end=171),
         statements=[
             Function(
@@ -433,6 +441,8 @@ def test_passes_logical_op_test():
     source = read_source("test_logical.wb")
     ast = Parser(tokenize(source), source).parse()
     assert ast == Program(
+        source=source,
+        fname="file.wb",
         loc=SourceLoc(lineno=0, start=0, end=447),
         statements=[
             Variable(
@@ -670,6 +680,8 @@ def test_break():
     source = read_source("test_break.wb")
     ast = Parser(tokenize(source), source).parse()
     assert ast == Program(
+        source=source,
+        fname="file.wb",
         loc=SourceLoc(lineno=0, start=0, end=122),
         statements=[
             Variable(

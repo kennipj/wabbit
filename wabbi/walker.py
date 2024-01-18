@@ -8,8 +8,11 @@ DIRECTION = Literal["backwards", "forwards", "both"]
 
 
 class Visitor:
-    def __init__(self, to_visit: list[type[Node]]) -> None:
+    def __init__(self, to_visit: list[type[Node]], source: str, fname: str) -> None:
         self.to_visit = to_visit
+        self.source = source
+        self.fname = fname
+        self.errors = []
 
 
 class Walker:

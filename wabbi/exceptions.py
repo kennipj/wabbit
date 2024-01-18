@@ -6,26 +6,26 @@ if TYPE_CHECKING:
 
 class WabbitSyntaxError(Exception):
     def __init__(
-        self, msg: str, fname: str, source: str, lineno: int, column: int, length: int
+        self, msg: str, fname: str, source: str, lineno: int, start: int, end: int
     ) -> None:
         self.lineno = lineno
-        self.column = column
-        self.length = length
+        self.start = start
+        self.end = end
         self._msg = msg
         self._err_msg = self._make_err_msg(fname, source)
 
     @classmethod
     def from_token(cls, msg: str, fname: str, source: str, token: "Token"):
         return WabbitSyntaxError(
-            msg, fname, source, token.lineno, token.column, len(token)
+            msg, fname, source, token.lineno, token.column, token.column + len(token)
         )
 
     def _make_err_msg(self, fname: str, source: str) -> str:
         line = "  " + source.splitlines()[self.lineno - 1]
         point_msg = (
             "  "
-            + "".join(" " for _ in range(self.column - 1))
-            + "".join("^" for _ in range(self.length))
+            + "".join(" " for _ in range(self.start - 1))
+            + "".join("^" for _ in range(self.end - self.start))
         )
         return f'File "{fname}" line {self.lineno} \n' + line + "\n" + point_msg + "\n"
 

@@ -175,3 +175,5 @@ class ErrorExpr(Expression):
 @dataclass
 class Program(Node):
     statements: list[Statement]
+    source: str
+    fname: str = "file.wb"
