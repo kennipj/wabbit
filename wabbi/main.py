@@ -52,8 +52,10 @@ def compile(
 
 
 @app.command()
-def source(file: str):
+def source(file: str, optimize: bool = False):
     ast = _to_ast(file)
+    if optimize:
+        ast = _simplify_tree(ast)
     print(format_program(ast))
 
 

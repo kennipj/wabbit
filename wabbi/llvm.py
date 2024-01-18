@@ -1,6 +1,7 @@
 from wabbi.model import (
     Assignment,
     BinOp,
+    Boolean,
     Branch,
     Call,
     ExprAsStatement,
@@ -15,6 +16,7 @@ from wabbi.model import (
     Parenthesis,
     Print,
     Program,
+    RelationalOp,
     Return,
     Statement,
     UnaryOp,
@@ -54,7 +56,7 @@ def out_name(node: Name) -> str:
 def res_expr(node: Expression, lines: Lines) -> str:
     literals = {Integer, Name, LocalName, GlobalName}
     match node:
-        case BinOp(op, lhs, rhs):
+        case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs):
             lhs_res = res_expr(lhs, lines) if type(node) not in literals else lhs
             rhs_res = res_expr(rhs, lines) if type(node) not in literals else rhs
             id_ = gensym()
@@ -80,6 +82,9 @@ def res_expr(node: Expression, lines: Lines) -> str:
                 case "!=":
                     lines.append(f"%{id_} = icmp ne i32 {lhs_res}, {rhs_res}")
             return f"%{id_}"
+
+        case Boolean(value):
+            return "1" if value == "true" else "0"
 
         case UnaryOp(op, expr):
             res = res_expr(expr, lines)

@@ -8,6 +8,9 @@ KEYWORDS = {
     "while": "WHILE",
     "func": "FUNC",
     "return": "RETURN",
+    "not": "NOT",
+    "true": "BOOL",
+    "false": "BOOL",
 }
 
 ONE_CHAR_SYMBOLS = {

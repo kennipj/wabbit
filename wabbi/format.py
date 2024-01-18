@@ -1,6 +1,7 @@
 from wabbi.model import (
     Assignment,
     BinOp,
+    Boolean,
     Branch,
     Call,
     ExprAsStatement,
@@ -15,6 +16,7 @@ from wabbi.model import (
     Parenthesis,
     Print,
     Program,
+    RelationalOp,
     Return,
     Statement,
     UnaryOp,
@@ -46,7 +48,7 @@ def fmt_expr(node: Expression) -> str:
         case Integer(value):
             return str(value)
 
-        case BinOp(op, lhs, rhs):
+        case BinOp(op, lhs, rhs) | RelationalOp(op, lhs, rhs):
             return f"{fmt_expr(lhs)} {op} {fmt_expr(rhs)}"
 
         case UnaryOp(op, expr):
@@ -58,6 +60,9 @@ def fmt_expr(node: Expression) -> str:
         case Call(name, args):
             formatted_args = ", ".join(fmt_expr(arg) for arg in args)
             return f"{name}({formatted_args})"
+
+        case Boolean(value):
+            return value
 
         case _:
             raise ValueError(f"Unexpected expression: {node}")

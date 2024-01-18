@@ -28,10 +28,22 @@ class Integer(Expression):
 
 
 @dataclass
+class BooleanExpression(Expression):
+    ...
+
+
+@dataclass
 class BinOp(Expression):
-    op: Literal["+", "*", "-", "/", "==", "<", ">", "<=", ">=", "!="]
+    op: Literal["+", "*", "-", "/"]
     lhs: Expression
     rhs: Expression
+
+
+@dataclass
+class RelationalOp(Expression):
+    op: Literal["==", "<", ">", "<=", ">=", "!="]
+    rhs: Expression
+    lhs: Expression
 
 
 @dataclass
@@ -121,6 +133,11 @@ class UnaryOp(Expression):
 @dataclass
 class ExprAsStatement(Statement):
     expr: Expression
+
+
+@dataclass
+class Boolean(Expression):
+    value: Literal["true", "false"]
 
 
 @dataclass
