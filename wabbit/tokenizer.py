@@ -130,7 +130,7 @@ def peek(start: int, num: int, source: str) -> str | None:
 def tokenize_alpha(start: int, source: str, lineno: int, last_line_pos: int) -> Token:
     n = start
     while n < len(source):
-        if not source[n].isdigit() and not source[n].isalpha():
+        if not source[n].isdigit() and not source[n].isalpha() and source[n] != "_":
             break
         n += 1
     word = source[start:n]

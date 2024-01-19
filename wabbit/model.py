@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from wabbit.exceptions import WabbitSyntaxError
+from wabbit.exceptions import WabbitError
+
+
+class UnknownType:
+    ...
 
 
 class IntTyped:
@@ -346,8 +350,8 @@ class Break(Statement):
 
 
 @dataclass
-class ErrorExpr(Expression):
-    err: WabbitSyntaxError
+class ErrorExpr(Expression, UnknownType):
+    err: WabbitError
 
 
 @dataclass
