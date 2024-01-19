@@ -36,7 +36,8 @@ class UnscriptToplevel(Visitor):
             new_func.body.append(stmt)
         new_func.body.append(
             Return(
-                expr=Integer(value=0, loc=SourceLoc(0, 0, 0)), loc=SourceLoc(0, 0, 0)
+                expr=Integer(value=0, loc=SourceLoc(0, 0, 0)),
+                loc=SourceLoc(0, 0, 0),
             )
         )
         node.statements = new_program_stmts + [new_func]

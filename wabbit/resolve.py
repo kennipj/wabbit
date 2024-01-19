@@ -3,12 +3,15 @@ from typing import cast
 from wabbit.exceptions import WabbitSyntaxError
 from wabbit.model import (
     Branch,
+    FloatGlobalName,
+    FloatLocalName,
+    FloatName,
     Function,
-    GlobalName,
     GlobalVar,
-    LocalName,
+    IntGlobalName,
+    IntLocalName,
+    IntName,
     LocalVar,
-    Name,
     Node,
     Program,
     VariableDecl,
@@ -49,7 +52,23 @@ class ResolveScopes(Visitor):
         self._globals.add(node.name)
         return GlobalVar(name=node.name, loc=node.loc, type_=node.type_)
 
-    def visit_name(self, node: Name) -> Name:
+    def visit_intname(self, node: IntName) -> IntLocalName | IntGlobalName:
+        self._maybe_error(node)
+        if node.value in self._globals:
+            return IntGlobalName(value=node.value, loc=node.loc)
+        if self._scope_level > 0:
+            return IntLocalName(value=node.value, loc=node.loc)
+        return IntGlobalName(value=node.value, loc=node.loc)
+
+    def visit_floatname(self, node: FloatName) -> FloatLocalName | FloatGlobalName:
+        self._maybe_error(node)
+        if node.value in self._globals:
+            return FloatGlobalName(value=node.value, loc=node.loc)
+        if self._scope_level > 0:
+            return FloatLocalName(value=node.value, loc=node.loc)
+        return FloatGlobalName(value=node.value, loc=node.loc)
+
+    def _maybe_error(self, node: IntName | FloatName) -> None:
         if node.value not in self._varnames:
             self.errors.append(
                 WabbitSyntaxError(
@@ -62,16 +81,12 @@ class ResolveScopes(Visitor):
                 )
             )
 
-        if node.value in self._globals:
-            return GlobalName(value=node.value, loc=node.loc)
-        if self._scope_level > 0:
-            return LocalName(value=node.value, loc=node.loc)
-        return GlobalName(value=node.value, loc=node.loc)
-
 
 def resolve_scopes(program: Program) -> Program:
     visitor = ResolveScopes(
-        [VariableDecl, Branch, While, Function, Name], program.source, program.fname
+        [VariableDecl, Branch, While, Function, IntName, FloatName],
+        program.source,
+        program.fname,
     )
     walker = Walker(visitor)
     if visitor.errors:

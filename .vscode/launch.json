@@ -29,10 +29,10 @@
             "name": "Python: Wab Compile",
             "type": "python",
             "request": "launch",
-            "module": "wab.main",
+            "module": "wabbit.main",
             "args": [
                 "compile",
-                "wab/tests/test_program1.wb",
+                "wabbit/tests/test_floats.wb",
                 "compiled.exe"
             ],
             "console": "integratedTerminal",

@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from typer import Typer
 
+from wabbit.add_types import add_types
 from wabbit.bracecheck import validate_braces
 from wabbit.deinit import deinit_variables
 from wabbit.fold_constants import fold_constants
@@ -65,6 +66,7 @@ def source(file: str, optimize: bool = False):
 def ast(
     file: str,
     fold: bool = False,
+    typed: bool = False,
     deinit: bool = False,
     resolve: bool = False,
     unscript: bool = False,
@@ -72,6 +74,8 @@ def ast(
     ast = _to_ast(file)
     if fold:
         ast = fold_constants(ast)
+    if typed:
+        ast = add_types(ast)
     if deinit:
         ast = deinit_variables(ast)
     if resolve:
@@ -96,6 +100,7 @@ def _compile_to_llvm(path: str):
 
 def _simplify_tree(ast: Program):
     ast = validate_ast(ast)
+    ast = add_types(ast)
     ast = fold_constants(ast)
     ast = deinit_variables(ast)
     ast = resolve_scopes(ast)

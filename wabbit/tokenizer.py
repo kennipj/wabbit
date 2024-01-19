@@ -36,6 +36,7 @@ ONE_CHAR_SYMBOLS = {
     "}": "RBRACE",
     "/": "DIVIDE",
     ",": "COMMA",
+    ".": "DOT",
 }
 
 TWO_CHAR_SYMBOLS = {
@@ -106,7 +107,7 @@ def tokenize(source: str, fname: str = "file.wb") -> list[Token]:
                     source,
                     lineno,
                     n - last_line_pos,
-                    1,
+                    n - last_line_pos + 1,
                 )
             )
             n += 1

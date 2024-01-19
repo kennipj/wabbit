@@ -7,6 +7,7 @@ from wabbit.model import (
     Call,
     ExprAsStatement,
     Expression,
+    Float,
     Function,
     FunctionArg,
     GlobalName,
@@ -53,6 +54,9 @@ def fmt_expr(node: Expression) -> str:
             return node.value
 
         case Integer():
+            return str(node.value)
+
+        case Float():
             return str(node.value)
 
         case BinOp() | RelationalOp() | LogicalOp():

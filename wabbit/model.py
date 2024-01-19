@@ -4,6 +4,18 @@ from typing import Literal
 from wabbit.exceptions import WabbitSyntaxError
 
 
+class IntTyped:
+    ...
+
+
+class FloatTyped:
+    ...
+
+
+class Numeric:
+    value: int | float
+
+
 @dataclass
 class SourceLoc:
     lineno: int
@@ -28,7 +40,7 @@ class Expression(Node):
 
 @dataclass
 class Type(Node):
-    value: Literal["int"]
+    value: Literal["int", "float"]
 
 
 @dataclass
@@ -37,8 +49,23 @@ class Name(Expression):
 
 
 @dataclass
-class Integer(Expression):
+class IntName(Name, IntTyped):
+    ...
+
+
+@dataclass
+class FloatName(Name, FloatTyped):
+    ...
+
+
+@dataclass
+class Integer(Expression, IntTyped, Numeric):
     value: int
+
+
+@dataclass
+class Float(Expression, FloatTyped, Numeric):
+    value: float
 
 
 @dataclass
@@ -54,10 +81,30 @@ class BinOp(Expression):
 
 
 @dataclass
+class IntBinOp(BinOp, IntTyped):
+    ...
+
+
+@dataclass
+class FloatBinOp(BinOp, FloatTyped):
+    ...
+
+
+@dataclass
 class RelationalOp(BooleanExpression):
     op: Literal["==", "<", ">", "<=", ">=", "!="]
     lhs: Expression
     rhs: Expression
+
+
+@dataclass
+class IntRelOp(RelationalOp, IntTyped):
+    ...
+
+
+@dataclass
+class FloatRelOp(RelationalOp, FloatTyped):
+    ...
 
 
 @dataclass
@@ -73,6 +120,16 @@ class Variable(Statement):
 
 
 @dataclass
+class IntVariable(Variable, IntTyped):
+    name: str
+
+
+@dataclass
+class FloatVariable(Variable, FloatTyped):
+    name: str
+
+
+@dataclass
 class VariableDecl(Statement):
     name: str
     type_: Type
@@ -84,8 +141,28 @@ class Print(Statement):
 
 
 @dataclass
+class IntPrint(Print, IntTyped):
+    ...
+
+
+@dataclass
+class FloatPrint(Print, FloatTyped):
+    ...
+
+
+@dataclass
 class Parenthesis(Expression):
     expr: Expression
+
+
+@dataclass
+class IntParen(Parenthesis, IntTyped):
+    ...
+
+
+@dataclass
+class FloatParen(Parenthesis, FloatTyped):
+    ...
 
 
 @dataclass
@@ -104,6 +181,16 @@ class Branch(Statement):
 @dataclass
 class FunctionArg(Name):
     type_: Type
+
+
+@dataclass
+class FloatFunctionArg(FunctionArg, FloatTyped):
+    ...
+
+
+@dataclass
+class IntFunctionArg(FunctionArg, IntTyped):
+    ...
 
 
 @dataclass
@@ -126,6 +213,16 @@ class Call(Expression):
 
 
 @dataclass
+class IntCall(Call, IntTyped):
+    ...
+
+
+@dataclass
+class FloatCall(Call, FloatTyped):
+    ...
+
+
+@dataclass
 class LocalVar(VariableDecl):
     ...
 
@@ -141,7 +238,27 @@ class LocalName(Name):
 
 
 @dataclass
+class IntLocalName(LocalName, IntTyped):
+    ...
+
+
+@dataclass
+class FloatLocalName(LocalName, FloatTyped):
+    ...
+
+
+@dataclass
 class GlobalName(Name):
+    ...
+
+
+@dataclass
+class IntGlobalName(GlobalName, IntTyped):
+    ...
+
+
+@dataclass
+class FloatGlobalName(GlobalName, FloatTyped):
     ...
 
 
@@ -149,6 +266,16 @@ class GlobalName(Name):
 class UnaryOp(Expression):
     op: Literal["-"]
     expr: Expression
+
+
+@dataclass
+class IntUnaryOp(UnaryOp, IntTyped):
+    ...
+
+
+@dataclass
+class FloatUnaryOp(UnaryOp, FloatTyped):
+    ...
 
 
 @dataclass

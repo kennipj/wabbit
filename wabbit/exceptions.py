@@ -33,4 +33,4 @@ class WabbitSyntaxError(Exception):
         return f"WabbitSyntaxError({self._msg})"
 
     def __str__(self) -> str:
-        return self._err_msg + f"WabbitSyntaxError: {self._msg}"
+        return self._err_msg + f"WabbitSyntaxError: {self._msg}\n"

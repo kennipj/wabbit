@@ -13,6 +13,7 @@ from wabbit.model import (
     ErrorExpr,
     ExprAsStatement,
     Expression,
+    Float,
     Function,
     FunctionArg,
     Integer,
@@ -133,6 +134,7 @@ class Parser:
             self.parse_unary,
             self.parse_call,
             self.parse_name,
+            self.parse_float,
             self.parse_integer,
             partial(self.parse_errorexpr, err),
         ]
@@ -160,7 +162,7 @@ class Parser:
 
     def parse_type(self, err: WabbitSyntaxError | None = None) -> Type:
         start = self.idx
-        to_try = [self.parse_int_type]
+        to_try = [self.parse_int_type, self.parse_float_type]
         for func in to_try:
             try:
                 return func()
@@ -243,6 +245,19 @@ class Parser:
             value=int(token.value),
             loc=SourceLoc(
                 lineno=token.lineno, start=token.column, end=token.column + len(token)
+            ),
+        )
+
+    def parse_float(self) -> Float:
+        base = self.expect("INTEGER")
+        self.expect("DOT")
+        decimals = self.expect("INTEGER")
+        return Float(
+            value=float(f"{base.value}.{decimals.value}"),
+            loc=SourceLoc(
+                lineno=base.lineno,
+                start=base.column,
+                end=decimals.column + len(decimals),
             ),
         )
 
@@ -551,26 +566,24 @@ class Parser:
 
     def parse_name(self) -> Name:
         token = self.expect("NAME", fatal=False)
-        return Name(
-            value=token.value,
-            loc=SourceLoc(
-                lineno=token.lineno, start=token.column, end=token.column + len(token)
-            ),
-        )
+        return Name(value=token.value, loc=_loc_from_token(token))
+
+    def parse_int_type(self) -> Type:
+        token = self.expect("INT")
+        return Type(value="int", loc=_loc_from_token(token))
+
+    def parse_float_type(self) -> Type:
+        token = self.expect("FLOAT")
+        return Type(value="float", loc=_loc_from_token(token))
 
     def parse_errorexpr(self, err: WabbitSyntaxError | None) -> ErrorExpr:
         if not err:
             raise SyntaxError("Unhandled exception!")
         return ErrorExpr(err=err, loc=SourceLoc(err.lineno, err.start, err.end))
 
-    def parse_int_type(self) -> Type:
-        int_ = self.expect("INT")
-        return Type(
-            value="int",
-            loc=SourceLoc(
-                lineno=int_.lineno, start=int_.column, end=int_.column + len(int_)
-            ),
-        )
-
     def _make_err(self, token: Token, msg: str) -> WabbitSyntaxError:
         return WabbitSyntaxError.from_token(msg, self.fname, self.source, token)
+
+
+def _loc_from_token(token: Token):
+    return SourceLoc(token.lineno, start=token.column, end=token.column + len(token))

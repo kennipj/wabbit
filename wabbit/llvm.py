@@ -1,35 +1,52 @@
 from wabbit.model import (
     Assignment,
-    BinOp,
     Boolean,
     Branch,
     Break,
-    Call,
     ExprAsStatement,
     Expression,
+    Float,
+    FloatBinOp,
+    FloatCall,
+    FloatGlobalName,
+    FloatLocalName,
+    FloatPrint,
+    FloatRelOp,
+    FloatTyped,
+    FloatUnaryOp,
     Function,
     GlobalName,
     GlobalVar,
+    IntBinOp,
+    IntCall,
     Integer,
+    IntGlobalName,
+    IntLocalName,
+    IntPrint,
+    IntRelOp,
+    IntTyped,
+    IntUnaryOp,
     LocalName,
     LocalVar,
     LogicalOp,
     Name,
     Negation,
     Parenthesis,
-    Print,
     Program,
-    RelationalOp,
     Return,
     Statement,
-    UnaryOp,
-    Variable,
     While,
 )
 from wabbit.utils import Lines
 
 # Generate a unique name like ".1", ".2", ".3", etc.
 _n = 0
+
+
+types = {
+    "int": "i32",
+    "float": "double",
+}
 
 
 def gensym() -> str:
@@ -41,6 +58,7 @@ def gensym() -> str:
 def generate_llvm(program: Program) -> str:
     lines = Lines()
     lines.append("declare i32 @_print_int(i32 %x)")
+    lines.append("declare double @_print_float(double %x)")
     for stmt in program.statements:
         out_stmt(stmt, lines)
     return "\n".join(lines)
@@ -72,7 +90,7 @@ def res_expr(node: Expression, lines: Lines) -> str:
             lines.append(f"%{id_} = xor i1 1, {res}")
             return f"%{id_}"
 
-        case BinOp() | RelationalOp():
+        case IntBinOp() | IntRelOp():
             lhs_res = (
                 res_expr(node.lhs, lines) if type(node) not in literals else node.lhs
             )
@@ -103,19 +121,56 @@ def res_expr(node: Expression, lines: Lines) -> str:
                     lines.append(f"%{id_} = icmp ne i32 {lhs_res}, {rhs_res}")
             return f"%{id_}"
 
+        case FloatBinOp() | FloatRelOp():
+            lhs_res = (
+                res_expr(node.lhs, lines) if type(node) not in literals else node.lhs
+            )
+            rhs_res = (
+                res_expr(node.rhs, lines) if type(node) not in literals else node.rhs
+            )
+            id_ = gensym()
+            match node.op:
+                case "+":
+                    lines.append(f"%{id_} = fadd double {lhs_res}, {rhs_res}")
+                case "*":
+                    lines.append(f"%{id_} = fmul double {lhs_res}, {rhs_res}")
+                case "-":
+                    lines.append(f"%{id_} = fsub double {lhs_res}, {rhs_res}")
+                case "/":
+                    lines.append(f"%{id_} = fdiv double {lhs_res}, {rhs_res}")
+                case "<":
+                    lines.append(f"%{id_} = fcmp olt double {lhs_res}, {rhs_res}")
+                case ">":
+                    lines.append(f"%{id_} = fcmp ogt double {lhs_res}, {rhs_res}")
+                case "<=":
+                    lines.append(f"%{id_} = fcmp ole double {lhs_res}, {rhs_res}")
+                case ">=":
+                    lines.append(f"%{id_} = fcmp oge double {lhs_res}, {rhs_res}")
+                case "==":
+                    lines.append(f"%{id_} = fcmp oeq double {lhs_res}, {rhs_res}")
+                case "!=":
+                    lines.append(f"%{id_} = fcmp one double {lhs_res}, {rhs_res}")
+            return f"%{id_}"
+
         case Boolean():
             return "1" if node.value == "true" else "0"
 
-        case UnaryOp():
+        case IntUnaryOp():
             res = res_expr(node.expr, lines)
             id_ = gensym()
             lines.append(f"%{id_} = sub i32 0, {res}")
             return f"%{id_}"
 
+        case FloatUnaryOp():
+            res = res_expr(node.expr, lines)
+            id_ = gensym()
+            lines.append(f"%{id_} = fsub double 0.0, {res}")
+            return f"%{id_}"
+
         case Parenthesis():
             return res_expr(node.expr, lines)
 
-        case Call():
+        case IntCall():
             args_res = ", ".join([f"i32 {res_expr(arg, lines)}" for arg in node.args])
             arg_types = ", ".join("i32" for _ in range(len(node.args)))
             id_ = gensym()
@@ -123,18 +178,41 @@ def res_expr(node: Expression, lines: Lines) -> str:
             lines.append(f"%{id_} = call i32 ({arg_types}) @{node.name}({args_res})")
             return f"%{id_}"
 
-        case Integer():
-            return str(node.value)
+        case FloatCall():
+            args_res = ", ".join(
+                [f"double {res_expr(arg, lines)}" for arg in node.args]
+            )
+            arg_types = ", ".join("double" for _ in range(len(node.args)))
+            id_ = gensym()
 
-        case LocalName():
+            lines.append(f"%{id_} = call double ({arg_types}) @{node.name}({args_res})")
+            return f"%{id_}"
+
+        case IntLocalName():
             id_ = gensym()
             lines.append(f"%{id_} = load i32, i32* %{node.value}")
             return f"%{id_}"
 
-        case GlobalName():
+        case FloatLocalName():
+            id_ = gensym()
+            lines.append(f"%{id_} = load double, double* %{node.value}")
+            return f"%{id_}"
+
+        case IntGlobalName():
             id_ = gensym()
             lines.append(f"%{id_} = load i32, i32* @{node.value}")
             return f"%{id_}"
+
+        case FloatGlobalName():
+            id_ = gensym()
+            lines.append(f"%{id_} = load double, double* @{node.value}")
+            return f"%{id_}"
+
+        case Integer():
+            return str(node.value)
+
+        case Float():
+            return str(node.value)
 
         case _:
             raise ValueError(f"Unexpected expression: {node}")
@@ -144,20 +222,45 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
     match node:
         case Assignment():
             res_rhs = res_expr(node.rhs, lines)
-            lines.append(f"store i32 {res_rhs}, i32* {out_name(node.lhs)}")
+            if isinstance(node.rhs, IntTyped):
+                lines.append(f"store i32 {res_rhs}, i32* {out_name(node.lhs)}")
+                return
 
-        case Variable():
-            raise ValueError("Unexpected Variable - AST not full compiled.")
+            elif isinstance(node.rhs, FloatTyped):
+                lines.append(f"store double {res_rhs}, double* {out_name(node.lhs)}")
+                return
+
+            raise ValueError(f"Untyped expression! {node.rhs}")
 
         case GlobalVar():
-            lines.append(f"@{node.name} = global i32 0")
+            if node.type_.value == "int":
+                lines.append(f"@{node.name} = global i32 0")
+                return
+
+            elif node.type_.value == "float":
+                lines.append(f"@{node.name} = global double 0.0")
+                return
+
+            raise ValueError(f"Unknown type: {node.type_.value}")
 
         case LocalVar():
-            lines.append(f"%{node.name} = alloca i32")
+            if node.type_.value == "int":
+                lines.append(f"%{node.name} = alloca i32")
+                return
+            elif node.type_.value == "float":
+                lines.append(f"%{node.name} = alloca double")
+                return
 
-        case Print():
+            raise ValueError(f"Unknown type: {node.type_.value}")
+
+        case IntPrint():
             lines.append(
                 f"call i32 (i32) @_print_int(i32 {res_expr(node.expr, lines)})"
+            )
+
+        case FloatPrint():
+            lines.append(
+                f"call double (double) @_print_float(double {res_expr(node.expr, lines)})"
             )
 
         case While():
@@ -196,14 +299,19 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
             lines.extend([f"{lm}:"])
 
         case Function():
-            res_args = ", ".join(f"i32 %.a{n}" for n in range(len(node.args)))
-            lines.append(f"define i32 @{node.name}({res_args}) {{")
+            res_args = ", ".join(
+                f"{types[arg.type_.value]} %.a{idx}"
+                for idx, arg in enumerate(node.args)
+            )
+            ret_type = types[node.ret_type_.value]
+            lines.append(f"define {ret_type} @{node.name}({res_args}) {{")
             with lines.indent():
                 for idx, arg in enumerate(node.args):
-                    lines.append(f"%{arg.value} = alloca i32")
-                    lines.append(f"store i32 %.a{idx}, i32* %{arg.value}")
+                    t = arg.type_.value
+                    lines.append(f"%{arg.value} = alloca {types[t]}")
+                    lines.append(f"store {types[t]} %.a{idx}, {types[t]}* %{arg.value}")
                 any(out_stmt(stmt, lines) for stmt in node.body)
-                lines.append("ret i32 0")
+                lines.append(f"ret {ret_type} {'0' if ret_type == 'i32' else '0.0'}")
 
             lines.append("}")
 
@@ -214,7 +322,14 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
 
         case Return():
             res = res_expr(node.expr, lines)
-            lines.append(f"ret i32 {res}")
+            if isinstance(node.expr, IntTyped):
+                lines.append(f"ret i32 {res}")
+                return
+            elif isinstance(node.expr, FloatTyped):
+                lines.append(f"ret double {res}")
+                return
+
+            raise ValueError(f"Untyped expression! {node.expr}")
 
         case ExprAsStatement():
             res_expr(node.expr, lines)
