@@ -3,9 +3,13 @@ from typing import Literal, cast
 from wabbit.model import (
     BinOp,
     Call,
+    CharCall,
+    CharName,
+    CharPrint,
+    CharTyped,
+    CharVariable,
     FloatBinOp,
     FloatCall,
-    FloatFunctionArg,
     FloatName,
     FloatParen,
     FloatPrint,
@@ -17,7 +21,6 @@ from wabbit.model import (
     FunctionArg,
     IntBinOp,
     IntCall,
-    IntFunctionArg,
     IntName,
     IntParen,
     IntPrint,
@@ -41,8 +44,8 @@ from wabbit.walker import Visitor, Walker
 class AddTypes(Visitor):
     def __init__(self, to_visit: list[type[Node]], source: str, fname: str) -> None:
         super().__init__(to_visit, source, fname)
-        self._vars: dict[str, Literal["float", "int"]] = {}
-        self._funcs: dict[str, Literal["float", "int"]] = {}
+        self._vars: dict[str, Literal["float", "int", "char"]] = {}
+        self._funcs: dict[str, Literal["float", "int", "char"]] = {}
 
     def visit_binop(self, node: BinOp) -> IntBinOp | FloatBinOp:
         if isinstance(node.lhs, IntTyped):
@@ -68,11 +71,13 @@ class AddTypes(Visitor):
 
         raise TypeError(f"Expected typed node. Got untyped {node}")
 
-    def visit_print(self, node: Print) -> IntPrint | FloatPrint:
+    def visit_print(self, node: Print) -> Print:
         if isinstance(node.expr, IntTyped):
             return IntPrint(expr=node.expr, loc=node.loc)
         elif isinstance(node.expr, FloatTyped):
             return FloatPrint(expr=node.expr, loc=node.loc)
+        elif isinstance(node.expr, CharTyped):
+            return CharPrint(expr=node.expr, loc=node.loc)
 
         raise TypeError(f"Expected typed node. Got untyped {node}")
 
@@ -84,7 +89,7 @@ class AddTypes(Visitor):
 
         raise TypeError(f"Expected typed node. Got untyped {node}")
 
-    def visit_variable(self, node: Variable) -> IntVariable | FloatVariable:
+    def visit_variable(self, node: Variable) -> Variable:
         if isinstance(node.expr, IntTyped):
             self._vars[node.name] = "int"
             return IntVariable(name=node.name, expr=node.expr, loc=node.loc)
@@ -92,6 +97,10 @@ class AddTypes(Visitor):
         elif isinstance(node.expr, FloatTyped):
             self._vars[node.name] = "float"
             return FloatVariable(name=node.name, expr=node.expr, loc=node.loc)
+
+        elif isinstance(node.expr, CharTyped):
+            self._vars[node.name] = "char"
+            return CharVariable(name=node.name, expr=node.expr, loc=node.loc)
 
         raise TypeError(f"Expected typed node. Got untyped {node}")
 
@@ -104,35 +113,45 @@ class AddTypes(Visitor):
             self._vars[node.name] = "float"
             return node
 
+        elif node.type_.value == "char":
+            self._vars[node.name] = "char"
+            return node
+
         raise TypeError(f"Unexpected type {node.type_}")
 
-    def visit_call(self, node: Call) -> IntCall | FloatCall:
+    def visit_call(self, node: Call) -> IntCall | FloatCall | CharCall:
         type_ = self._funcs[node.name]
         if type_ == "int":
             return IntCall(name=node.name, args=node.args, loc=node.loc)
         elif type_ == "float":
             return FloatCall(name=node.name, args=node.args, loc=node.loc)
+        elif type_ == "char":
+            return CharCall(name=node.name, args=node.args, loc=node.loc)
 
         raise TypeError(f"Unexpected type {type_}")
 
-    def visit_name(self, node: Name) -> IntName | FloatName:
+    def visit_name(self, node: Name) -> IntName | FloatName | CharName:
         type_ = self._vars[node.value]
         if type_ == "int":
             return IntName(value=node.value, loc=node.loc)
         elif type_ == "float":
             return FloatName(value=node.value, loc=node.loc)
+        elif type_ == "char":
+            return CharName(value=node.value, loc=node.loc)
 
         raise TypeError(f"Unexpected type {type_}")
 
-    def visit_functionarg(
-        self, node: FunctionArg
-    ) -> FunctionArg:  # IntFunctionArg | FloatFunctionArg:
+    def visit_functionarg(self, node: FunctionArg) -> FunctionArg:
         if node.type_.value == "int":
             self._vars[node.value] = "int"
             return node
 
         elif node.type_.value == "float":
             self._vars[node.value] = "float"
+            return node
+
+        elif node.type_.value == "char":
+            self._vars[node.value] = "char"
             return node
 
         raise TypeError(f"Unexpected type {node.type_}")
@@ -144,6 +163,10 @@ class AddTypes(Visitor):
 
         elif node.ret_type_.value == "float":
             self._funcs[node.name] = "float"
+            return node
+
+        elif node.ret_type_.value == "char":
+            self._funcs[node.name] = "char"
             return node
 
         raise TypeError(f"Unexpected type {node.ret_type_}")

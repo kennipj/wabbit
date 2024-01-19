@@ -3,6 +3,11 @@ from wabbit.model import (
     Boolean,
     Branch,
     Break,
+    Char,
+    CharGlobalName,
+    CharLocalName,
+    CharPrint,
+    CharTyped,
     ExprAsStatement,
     Expression,
     Float,
@@ -59,6 +64,7 @@ def generate_llvm(program: Program) -> str:
     lines = Lines()
     lines.append("declare i32 @_print_int(i32 %x)")
     lines.append("declare double @_print_float(double %x)")
+    lines.append("declare i32 @_print_char(i32 %x)")
     for stmt in program.statements:
         out_stmt(stmt, lines)
     return "\n".join(lines)
@@ -188,7 +194,7 @@ def res_expr(node: Expression, lines: Lines) -> str:
             lines.append(f"%{id_} = call double ({arg_types}) @{node.name}({args_res})")
             return f"%{id_}"
 
-        case IntLocalName():
+        case IntLocalName() | CharLocalName():
             id_ = gensym()
             lines.append(f"%{id_} = load i32, i32* %{node.value}")
             return f"%{id_}"
@@ -198,7 +204,7 @@ def res_expr(node: Expression, lines: Lines) -> str:
             lines.append(f"%{id_} = load double, double* %{node.value}")
             return f"%{id_}"
 
-        case IntGlobalName():
+        case IntGlobalName() | CharGlobalName():
             id_ = gensym()
             lines.append(f"%{id_} = load i32, i32* @{node.value}")
             return f"%{id_}"
@@ -214,6 +220,9 @@ def res_expr(node: Expression, lines: Lines) -> str:
         case Float():
             return str(node.value)
 
+        case Char():
+            return str(ord(node.value))
+
         case _:
             raise ValueError(f"Unexpected expression: {node}")
 
@@ -222,7 +231,7 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
     match node:
         case Assignment():
             res_rhs = res_expr(node.rhs, lines)
-            if isinstance(node.rhs, IntTyped):
+            if isinstance(node.rhs, (IntTyped, CharTyped)):
                 lines.append(f"store i32 {res_rhs}, i32* {out_name(node.lhs)}")
                 return
 
@@ -233,7 +242,7 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
             raise ValueError(f"Untyped expression! {node.rhs}")
 
         case GlobalVar():
-            if node.type_.value == "int":
+            if node.type_.value in {"int", "char"}:
                 lines.append(f"@{node.name} = global i32 0")
                 return
 
@@ -244,7 +253,7 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
             raise ValueError(f"Unknown type: {node.type_.value}")
 
         case LocalVar():
-            if node.type_.value == "int":
+            if node.type_.value in {"int", "char"}:
                 lines.append(f"%{node.name} = alloca i32")
                 return
             elif node.type_.value == "float":
@@ -261,6 +270,11 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
         case FloatPrint():
             lines.append(
                 f"call double (double) @_print_float(double {res_expr(node.expr, lines)})"
+            )
+
+        case CharPrint():
+            lines.append(
+                f"call i32 (i32) @_print_char(i32 {res_expr(node.expr, lines)})"
             )
 
         case While():

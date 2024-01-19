@@ -3,6 +3,9 @@ from typing import cast
 from wabbit.exceptions import WabbitSyntaxError
 from wabbit.model import (
     Branch,
+    CharGlobalName,
+    CharLocalName,
+    CharName,
     FloatGlobalName,
     FloatLocalName,
     FloatName,
@@ -12,6 +15,7 @@ from wabbit.model import (
     IntLocalName,
     IntName,
     LocalVar,
+    Name,
     Node,
     Program,
     VariableDecl,
@@ -68,7 +72,15 @@ class ResolveScopes(Visitor):
             return FloatLocalName(value=node.value, loc=node.loc)
         return FloatGlobalName(value=node.value, loc=node.loc)
 
-    def _maybe_error(self, node: IntName | FloatName) -> None:
+    def visit_charname(self, node: CharName) -> CharLocalName | CharGlobalName:
+        self._maybe_error(node)
+        if node.value in self._globals:
+            return CharGlobalName(value=node.value, loc=node.loc)
+        if self._scope_level > 0:
+            return CharLocalName(value=node.value, loc=node.loc)
+        return CharGlobalName(value=node.value, loc=node.loc)
+
+    def _maybe_error(self, node: Name) -> None:
         if node.value not in self._varnames:
             self.errors.append(
                 WabbitSyntaxError(
@@ -84,7 +96,7 @@ class ResolveScopes(Visitor):
 
 def resolve_scopes(program: Program) -> Program:
     visitor = ResolveScopes(
-        [VariableDecl, Branch, While, Function, IntName, FloatName],
+        [VariableDecl, Branch, While, Function, IntName, FloatName, CharName],
         program.source,
         program.fname,
     )

@@ -10,6 +10,7 @@ from wabbit.model import (
     Branch,
     Break,
     Call,
+    Char,
     ErrorExpr,
     ExprAsStatement,
     Expression,
@@ -136,6 +137,7 @@ class Parser:
             self.parse_name,
             self.parse_float,
             self.parse_integer,
+            self.parse_char,
             partial(self.parse_errorexpr, err),
         ]
         for func in to_try:
@@ -162,7 +164,7 @@ class Parser:
 
     def parse_type(self, err: WabbitSyntaxError | None = None) -> Type:
         start = self.idx
-        to_try = [self.parse_int_type, self.parse_float_type]
+        to_try = [self.parse_int_type, self.parse_float_type, self.parse_char_type]
         for func in to_try:
             try:
                 return func()
@@ -568,6 +570,28 @@ class Parser:
         token = self.expect("NAME", fatal=False)
         return Name(value=token.value, loc=_loc_from_token(token))
 
+    def parse_char(self) -> Char | ErrorExpr:
+        start = self.expect("QUOTE")
+        bkslash = None
+        if self.peek("BACKSLASH"):
+            bkslash = self.expect("BACKSLASH")
+        token = self.expect("NAME")
+        end = self.expect("QUOTE")
+
+        if (bkslash and len(bkslash) + len(token) > 2) or len(token) > 1:
+            return ErrorExpr(
+                err=self._make_err(
+                    token, f"Found {len(token)} characters, only 1 is expected."
+                ),
+                loc=_loc_from_token(token),
+            )
+        return Char(
+            value=token.value
+            if not bkslash
+            else (bkslash.value + token.value).encode().decode("unicode_escape"),
+            loc=SourceLoc(lineno=start.lineno, start=start.column, end=end.column),
+        )
+
     def parse_int_type(self) -> Type:
         token = self.expect("INT")
         return Type(value="int", loc=_loc_from_token(token))
@@ -575,6 +599,10 @@ class Parser:
     def parse_float_type(self) -> Type:
         token = self.expect("FLOAT")
         return Type(value="float", loc=_loc_from_token(token))
+
+    def parse_char_type(self) -> Type:
+        token = self.expect("CHAR")
+        return Type(value="char", loc=_loc_from_token(token))
 
     def parse_errorexpr(self, err: WabbitSyntaxError | None) -> ErrorExpr:
         if not err:

@@ -3,6 +3,8 @@ from typing import cast
 from wabbit.exceptions import WabbitSyntaxError
 from wabbit.model import (
     Assignment,
+    CharName,
+    CharVariable,
     FloatName,
     FloatVariable,
     IntName,
@@ -45,6 +47,19 @@ class DeinitVisitor(Visitor):
             ),
         ]
 
+    def visit_charvariable(self, node: Variable) -> list[VariableDecl | Assignment]:
+        self._maybe_err(node)
+        return [
+            VariableDecl(
+                name=node.name, loc=node.loc, type_=Type(value="char", loc=node.loc)
+            ),
+            Assignment(
+                lhs=CharName(value=node.name, loc=node.loc),
+                rhs=node.expr,
+                loc=node.loc,
+            ),
+        ]
+
     def _maybe_err(self, node: Variable) -> None:
         if node.name in self._vars:
             self.errors.append(
@@ -62,7 +77,9 @@ class DeinitVisitor(Visitor):
 
 
 def deinit_variables(program: Program) -> Program:
-    visitor = DeinitVisitor([IntVariable, FloatVariable], program.source, program.fname)
+    visitor = DeinitVisitor(
+        [IntVariable, FloatVariable, CharVariable], program.source, program.fname
+    )
     program = cast(Program, Walker(visitor).traverse(program))
     if visitor.errors:
         for err in visitor.errors:

@@ -7,11 +7,16 @@
 #include <stdio.h>
 
 int _print_int(int x) {
-  printf("Out: %i\n", x);
+  printf("%i\n", x);
   return 0;
 }
 
 int _print_float(double x) {
     printf("%lf\n", x);
+    return 0;
+}
+
+int _print_char(int c) {
+    printf("%c", c);
     return 0;
 }

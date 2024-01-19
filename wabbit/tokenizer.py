@@ -37,6 +37,8 @@ ONE_CHAR_SYMBOLS = {
     "/": "DIVIDE",
     ",": "COMMA",
     ".": "DOT",
+    "'": "QUOTE",
+    "\\": "BACKSLASH",
 }
 
 TWO_CHAR_SYMBOLS = {

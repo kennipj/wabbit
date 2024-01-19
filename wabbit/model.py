@@ -12,6 +12,10 @@ class FloatTyped:
     ...
 
 
+class CharTyped:
+    ...
+
+
 class Numeric:
     value: int | float
 
@@ -40,7 +44,7 @@ class Expression(Node):
 
 @dataclass
 class Type(Node):
-    value: Literal["int", "float"]
+    value: Literal["int", "float", "char"]
 
 
 @dataclass
@@ -59,6 +63,11 @@ class FloatName(Name, FloatTyped):
 
 
 @dataclass
+class CharName(Name, CharTyped):
+    ...
+
+
+@dataclass
 class Integer(Expression, IntTyped, Numeric):
     value: int
 
@@ -66,6 +75,11 @@ class Integer(Expression, IntTyped, Numeric):
 @dataclass
 class Float(Expression, FloatTyped, Numeric):
     value: float
+
+
+@dataclass
+class Char(Expression, CharTyped):
+    value: str
 
 
 @dataclass
@@ -121,12 +135,17 @@ class Variable(Statement):
 
 @dataclass
 class IntVariable(Variable, IntTyped):
-    name: str
+    ...
 
 
 @dataclass
 class FloatVariable(Variable, FloatTyped):
-    name: str
+    ...
+
+
+@dataclass
+class CharVariable(Variable, FloatTyped):
+    ...
 
 
 @dataclass
@@ -147,6 +166,11 @@ class IntPrint(Print, IntTyped):
 
 @dataclass
 class FloatPrint(Print, FloatTyped):
+    ...
+
+
+@dataclass
+class CharPrint(Print, CharTyped):
     ...
 
 
@@ -223,6 +247,11 @@ class FloatCall(Call, FloatTyped):
 
 
 @dataclass
+class CharCall(Call, CharTyped):
+    ...
+
+
+@dataclass
 class LocalVar(VariableDecl):
     ...
 
@@ -248,6 +277,11 @@ class FloatLocalName(LocalName, FloatTyped):
 
 
 @dataclass
+class CharLocalName(LocalName, CharTyped):
+    ...
+
+
+@dataclass
 class GlobalName(Name):
     ...
 
@@ -259,6 +293,11 @@ class IntGlobalName(GlobalName, IntTyped):
 
 @dataclass
 class FloatGlobalName(GlobalName, FloatTyped):
+    ...
+
+
+@dataclass
+class CharGlobalName(GlobalName, CharTyped):
     ...
 
 

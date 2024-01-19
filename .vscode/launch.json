@@ -32,7 +32,7 @@
             "module": "wabbit.main",
             "args": [
                 "compile",
-                "wabbit/tests/test_floats.wb",
+                "wabbit/tests/test_char.wb",
                 "compiled.exe"
             ],
             "console": "integratedTerminal",
