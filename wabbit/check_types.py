@@ -17,12 +17,18 @@ from wabbit.walker import Visitor, Walker
 
 
 class TypeCheck(Visitor):
-    def __init__(self, to_visit: list[type[Node]], source: str, fname: str) -> None:
+    def __init__(
+        self,
+        to_visit: list[type[Node]],
+        pre_visit: list[type[Node]],
+        source: str,
+        fname: str,
+    ) -> None:
         self._in_func = False
         self._ret_type = ""
         self._in_loop = False
         self._visited = set()
-        super().__init__(to_visit, source, fname)
+        super().__init__(to_visit, pre_visit, source, fname)
 
     def visit_errorexpr(self, node: ErrorExpr) -> ErrorExpr:
         if id(node) not in self._visited:
@@ -82,9 +88,12 @@ class TypeCheck(Visitor):
 
 def check_types(ast: Program) -> Program:
     visitor = TypeCheck(
-        [ErrorExpr, Function, Return, While, Break], source=ast.source, fname=ast.fname
+        to_visit=[ErrorExpr, Function, Return, While, Break],
+        pre_visit=[Function, While],
+        source=ast.source,
+        fname=ast.fname,
     )
-    ast = cast(Program, Walker(visitor=visitor).traverse(ast, direction="both"))
+    ast = cast(Program, Walker(visitor=visitor).traverse(ast))
     if visitor.errors:
         for err in visitor.errors:
             print(err)

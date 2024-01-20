@@ -2,6 +2,9 @@ from typing import cast
 
 from wabbit.exceptions import WabbitSyntaxError
 from wabbit.model import (
+    BoolGlobalName,
+    BoolLocalName,
+    BoolName,
     Branch,
     CharGlobalName,
     CharLocalName,
@@ -25,13 +28,19 @@ from wabbit.walker import Visitor, Walker
 
 
 class ResolveScopes(Visitor):
-    def __init__(self, to_visit: list[type[Node]], source: str, fname: str) -> None:
+    def __init__(
+        self,
+        to_visit: list[type[Node]],
+        pre_visit: list[type[Node]],
+        source: str,
+        fname: str,
+    ) -> None:
         self.errors = []
         self._visit_status: dict[int, bool] = {}
         self._globals = set()
         self._varnames = set()
         self._scope_level = 0
-        super().__init__(to_visit, source, fname)
+        super().__init__(to_visit, pre_visit, source, fname)
 
     def visit_function(self, node: Function) -> Function:
         self._varnames.update({arg.value for arg in node.args})
@@ -80,6 +89,14 @@ class ResolveScopes(Visitor):
             return CharLocalName(value=node.value, loc=node.loc)
         return CharGlobalName(value=node.value, loc=node.loc)
 
+    def visit_boolname(self, node: BoolName) -> BoolLocalName | BoolGlobalName:
+        self._maybe_error(node)
+        if node.value in self._globals:
+            return BoolGlobalName(value=node.value, loc=node.loc)
+        if self._scope_level > 0:
+            return BoolLocalName(value=node.value, loc=node.loc)
+        return BoolGlobalName(value=node.value, loc=node.loc)
+
     def _maybe_error(self, node: Name) -> None:
         if node.value not in self._varnames:
             self.errors.append(
@@ -96,13 +113,23 @@ class ResolveScopes(Visitor):
 
 def resolve_scopes(program: Program) -> Program:
     visitor = ResolveScopes(
-        [VariableDecl, Branch, While, Function, IntName, FloatName, CharName],
-        program.source,
-        program.fname,
+        to_visit=[
+            VariableDecl,
+            Branch,
+            While,
+            Function,
+            IntName,
+            FloatName,
+            CharName,
+            BoolName,
+        ],
+        pre_visit=[Function, Branch, While],
+        source=program.source,
+        fname=program.fname,
     )
     walker = Walker(visitor)
     if visitor.errors:
         for err in visitor.errors:
             print(err)
         exit()
-    return cast(Program, walker.traverse(program, direction="both"))
+    return cast(Program, walker.traverse(program))

@@ -12,6 +12,10 @@ class IntTyped:
     ...
 
 
+class BoolTyped:
+    ...
+
+
 class FloatTyped:
     ...
 
@@ -48,7 +52,7 @@ class Expression(Node):
 
 @dataclass
 class Type(Node):
-    value: Literal["int", "float", "char"]
+    value: Literal["int", "float", "char", "bool"]
 
 
 @dataclass
@@ -68,6 +72,11 @@ class FloatName(Name, FloatTyped):
 
 @dataclass
 class CharName(Name, CharTyped):
+    ...
+
+
+@dataclass
+class BoolName(Name, BoolTyped):
     ...
 
 
@@ -126,6 +135,11 @@ class FloatRelOp(RelationalOp, FloatTyped):
 
 
 @dataclass
+class BoolRelOp(RelationalOp, BoolTyped):
+    ...
+
+
+@dataclass
 class Assignment(Statement):
     lhs: Name
     rhs: Expression
@@ -149,6 +163,11 @@ class FloatVariable(Variable, FloatTyped):
 
 @dataclass
 class CharVariable(Variable, FloatTyped):
+    ...
+
+
+@dataclass
+class BoolVariable(Variable, BoolTyped):
     ...
 
 
@@ -179,6 +198,11 @@ class CharPrint(Print, CharTyped):
 
 
 @dataclass
+class BoolPrint(Print, BoolTyped):
+    ...
+
+
+@dataclass
 class Parenthesis(Expression):
     expr: Expression
 
@@ -190,6 +214,11 @@ class IntParen(Parenthesis, IntTyped):
 
 @dataclass
 class FloatParen(Parenthesis, FloatTyped):
+    ...
+
+
+@dataclass
+class BoolParen(Parenthesis, BoolTyped):
     ...
 
 
@@ -256,6 +285,11 @@ class CharCall(Call, CharTyped):
 
 
 @dataclass
+class BoolCall(Call, BoolTyped):
+    ...
+
+
+@dataclass
 class LocalVar(VariableDecl):
     ...
 
@@ -286,6 +320,11 @@ class CharLocalName(LocalName, CharTyped):
 
 
 @dataclass
+class BoolLocalName(LocalName, BoolTyped):
+    ...
+
+
+@dataclass
 class GlobalName(Name):
     ...
 
@@ -302,6 +341,11 @@ class FloatGlobalName(GlobalName, FloatTyped):
 
 @dataclass
 class CharGlobalName(GlobalName, CharTyped):
+    ...
+
+
+@dataclass
+class BoolGlobalName(GlobalName, BoolTyped):
     ...
 
 
@@ -327,21 +371,21 @@ class ExprAsStatement(Statement):
 
 
 @dataclass
-class Boolean(BooleanExpression):
+class Boolean(Expression, BoolTyped):
     value: Literal["true", "false"]
 
 
 @dataclass
-class LogicalOp(BooleanExpression):
+class LogicalOp(Expression, BoolTyped):
     op: Literal["and", "or"]
-    lhs: BooleanExpression
-    rhs: BooleanExpression
+    lhs: Expression
+    rhs: Expression
 
 
 @dataclass
-class Negation(BooleanExpression):
+class Negation(Expression, BoolTyped):
     op: Literal["not"]
-    expr: BooleanExpression
+    expr: Expression
 
 
 @dataclass

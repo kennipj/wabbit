@@ -32,6 +32,11 @@ class FoldConstants(Visitor):
 
 
 def fold_constants(program: Program) -> Program:
-    visitor = FoldConstants([BinOp, Parenthesis], program.source, program.fname)
+    visitor = FoldConstants(
+        to_visit=[BinOp, Parenthesis],
+        pre_visit=[],
+        source=program.source,
+        fname=program.fname,
+    )
     walker = Walker(visitor)
     return cast(Program, walker.traverse(program))

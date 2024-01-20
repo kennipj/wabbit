@@ -45,5 +45,9 @@ class UnscriptToplevel(Visitor):
 
 
 def unscript_toplevel(program: Program) -> Program:
-    walker = Walker(UnscriptToplevel([Program], program.source, program.fname))
+    walker = Walker(
+        UnscriptToplevel(
+            to_visit=[Program], pre_visit=[], source=program.source, fname=program.fname
+        )
+    )
     return cast(Program, walker.traverse(program))

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Literal, cast
+from typing import Callable, Literal, cast
 
 from wabbit.exceptions import WabbitSyntaxError
 from wabbit.model import (
@@ -36,6 +36,8 @@ from wabbit.model import (
 )
 from wabbit.tokenizer import Token
 
+BIN_OPS = ["+", "-", "*", "/", "<", "<=", "==", ">", ">=", "!=", "and", "or"]
+
 
 class Parser:
     def __init__(
@@ -47,8 +49,11 @@ class Parser:
         self.fname = fname
 
     def expect(self, type_: str, fatal: bool = False) -> Token:
+        return self.expect_one_of(type_, fatal=fatal)
+
+    def expect_one_of(self, *type_: str, fatal: bool = False) -> Token:
         token = self.tokens[self.idx]
-        if token.type_ == type_:
+        if token.type_ in type_:
             self.idx += 1
             return token
         elif fatal:
@@ -60,6 +65,13 @@ class Parser:
             return None
         token = self.tokens[self.idx + num]
         if token.type_ == type_:
+            return token
+
+    def peek_one_of_val(self, *val: str, num: int = 0) -> Token | None:
+        if not (self.idx + num < len(self.tokens)):
+            return None
+        token = self.tokens[self.idx + num]
+        if token.value in val:
             return token
         return None
 
@@ -114,10 +126,7 @@ class Parser:
     def parse_expression(self, err: WabbitSyntaxError | None = None) -> Expression:
         start = self.idx
         to_try = [
-            self.parse_add,
-            self.parse_mul,
-            self.parse_sub,
-            self.parse_div,
+            self.parse_binop,
             self.parse_term,
             partial(self.parse_errorexpr, err),
         ]
@@ -133,26 +142,13 @@ class Parser:
         to_try = [
             self.parse_parenthesis,
             self.parse_unary,
+            self.parse_not,
             self.parse_call,
             self.parse_name,
             self.parse_float,
             self.parse_integer,
             self.parse_char,
-            partial(self.parse_errorexpr, err),
-        ]
-        for func in to_try:
-            try:
-                return func()
-            except SyntaxError:
-                self.idx = start
-        raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
-
-    def parse_boolexpr(self, err: WabbitSyntaxError | None = None) -> BooleanExpression:
-        start = self.idx
-        to_try = [
-            self.parse_or,
-            self.parse_and,
-            self.parse_bool_term,
+            self.parse_bool,
             partial(self.parse_errorexpr, err),
         ]
         for func in to_try:
@@ -164,28 +160,11 @@ class Parser:
 
     def parse_type(self, err: WabbitSyntaxError | None = None) -> Type:
         start = self.idx
-        to_try = [self.parse_int_type, self.parse_float_type, self.parse_char_type]
-        for func in to_try:
-            try:
-                return func()
-            except SyntaxError:
-                self.idx = start
-        raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
-
-    def parse_bool_term(
-        self, err: WabbitSyntaxError | None = None
-    ) -> BooleanExpression:
-        start = self.idx
         to_try = [
-            self.parse_lt,
-            self.parse_gt,
-            self.parse_lte,
-            self.parse_gte,
-            self.parse_eq,
-            self.parse_neq,
-            self.parse_not,
-            self.parse_bool,
-            partial(self.parse_errorexpr, err),
+            self.parse_int_type,
+            self.parse_float_type,
+            self.parse_char_type,
+            self.parse_bool_type,
         ]
         for func in to_try:
             try:
@@ -194,31 +173,49 @@ class Parser:
                 self.idx = start
         raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
 
-    def parse_or(self) -> LogicalOp:
-        lhs = self.parse_bool_term()
-        self.expect("OR")
-        rhs = self.parse_bool_term()
-        return LogicalOp(
-            op="or",
-            lhs=lhs,
-            rhs=rhs,
-            loc=SourceLoc(lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end),
-        )
+    def parse_binop(self) -> Expression:
+        lhs = self.parse_term()
+        while True:
+            op = self.peek_one_of_val(*BIN_OPS)
+            if not op:
+                return lhs
+            self.expect(op.type_)
+            rhs = self.parse_term()
 
-    def parse_and(self) -> LogicalOp:
-        lhs = self.parse_bool_term()
-        self.expect("AND")
-        rhs = self.parse_bool_term()
-        return LogicalOp(
-            op="and",
-            lhs=lhs,
-            rhs=rhs,
-            loc=SourceLoc(lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end),
-        )
+            match op.value:
+                case "+" | "*" | "-" | "/":
+                    lhs = BinOp(
+                        op=op.value,
+                        lhs=lhs,
+                        rhs=rhs,
+                        loc=SourceLoc(
+                            lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end
+                        ),
+                    )
+                case "<" | "<=" | "==" | ">" | ">=" | "!=":
+                    lhs = RelationalOp(
+                        op=op.value,
+                        lhs=lhs,
+                        rhs=rhs,
+                        loc=SourceLoc(
+                            lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end
+                        ),
+                    )
+                case "and" | "or":
+                    lhs = LogicalOp(
+                        op=op.value,
+                        lhs=lhs,
+                        rhs=rhs,
+                        loc=SourceLoc(
+                            lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end
+                        ),
+                    )
+                case _:
+                    raise ValueError(f"Unexpected token {op}")
 
     def parse_not(self) -> Negation:
         negate = self.expect("NOT")
-        rhs = self.parse_bool_term()
+        rhs = self.parse_expression()
         return Negation(
             op="not",
             expr=rhs,
@@ -515,7 +512,7 @@ class Parser:
 
     def parse_while(self) -> While:
         while_ = self.expect("WHILE")
-        rel = self.parse_boolexpr()
+        rel = self.parse_expression()
         self.expect("LBRACE", fatal=True)
         statements = self.parse_statements()
         end_brace = self.expect("RBRACE", fatal=True)
@@ -529,7 +526,7 @@ class Parser:
 
     def parse_branch(self) -> Branch:
         if_ = self.expect("IF")
-        rel = self.parse_boolexpr()
+        rel = self.parse_expression()
         self.expect("LBRACE", fatal=True)
         statements = self.parse_statements()
         end_brace = self.expect("RBRACE", fatal=True)
@@ -603,6 +600,10 @@ class Parser:
     def parse_char_type(self) -> Type:
         token = self.expect("CHAR")
         return Type(value="char", loc=_loc_from_token(token))
+
+    def parse_bool_type(self) -> Type:
+        token = self.expect("BOOL")
+        return Type(value="bool", loc=_loc_from_token(token))
 
     def parse_errorexpr(self, err: WabbitSyntaxError | None) -> ErrorExpr:
         if not err:

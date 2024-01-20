@@ -1,4 +1,4 @@
-from wabbit.model import ErrorExpr, Node, Program
+from wabbit.model import ErrorExpr, Program
 from wabbit.walker import Visitor, Walker
 
 
@@ -9,7 +9,9 @@ class Validator(Visitor):
 
 
 def validate_ast(ast: Program):
-    visitor = Validator([ErrorExpr], ast.source, ast.fname)
+    visitor = Validator(
+        to_visit=[ErrorExpr], pre_visit=[], source=ast.source, fname=ast.fname
+    )
     Walker(visitor).traverse(ast)
     if visitor.errors:
         for err in visitor.errors:

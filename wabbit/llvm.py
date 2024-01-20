@@ -1,6 +1,11 @@
 from wabbit.model import (
     Assignment,
     Boolean,
+    BoolGlobalName,
+    BoolLocalName,
+    BoolPrint,
+    BoolRelOp,
+    BoolTyped,
     Branch,
     Break,
     Char,
@@ -65,6 +70,7 @@ def generate_llvm(program: Program) -> str:
     lines.append("declare i32 @_print_int(i32 %x)")
     lines.append("declare double @_print_float(double %x)")
     lines.append("declare i32 @_print_char(i32 %x)")
+    lines.append("declare i1 @_print_bool(i1 %x)")
     for stmt in program.statements:
         out_stmt(stmt, lines)
     return "\n".join(lines)
@@ -158,6 +164,29 @@ def res_expr(node: Expression, lines: Lines) -> str:
                     lines.append(f"%{id_} = fcmp one double {lhs_res}, {rhs_res}")
             return f"%{id_}"
 
+        case BoolRelOp():
+            lhs_res = (
+                res_expr(node.lhs, lines) if type(node) not in literals else node.lhs
+            )
+            rhs_res = (
+                res_expr(node.rhs, lines) if type(node) not in literals else node.rhs
+            )
+            id_ = gensym()
+            match node.op:
+                case "<":
+                    lines.append(f"%{id_} = icmp slt i1 {lhs_res}, {rhs_res}")
+                case ">":
+                    lines.append(f"%{id_} = icmp sgt i1 {lhs_res}, {rhs_res}")
+                case "<=":
+                    lines.append(f"%{id_} = icmp sle i1 {lhs_res}, {rhs_res}")
+                case ">=":
+                    lines.append(f"%{id_} = icmp sge i1 {lhs_res}, {rhs_res}")
+                case "==":
+                    lines.append(f"%{id_} = icmp eq i1 {lhs_res}, {rhs_res}")
+                case "!=":
+                    lines.append(f"%{id_} = icmp ne i1 {lhs_res}, {rhs_res}")
+            return f"%{id_}"
+
         case Boolean():
             return "1" if node.value == "true" else "0"
 
@@ -204,6 +233,11 @@ def res_expr(node: Expression, lines: Lines) -> str:
             lines.append(f"%{id_} = load double, double* %{node.value}")
             return f"%{id_}"
 
+        case BoolLocalName():
+            id_ = gensym()
+            lines.append(f"%{id_} = load i1, i1* %{node.value}")
+            return f"%{id_}"
+
         case IntGlobalName() | CharGlobalName():
             id_ = gensym()
             lines.append(f"%{id_} = load i32, i32* @{node.value}")
@@ -212,6 +246,11 @@ def res_expr(node: Expression, lines: Lines) -> str:
         case FloatGlobalName():
             id_ = gensym()
             lines.append(f"%{id_} = load double, double* @{node.value}")
+            return f"%{id_}"
+
+        case BoolGlobalName():
+            id_ = gensym()
+            lines.append(f"%{id_} = load i1, i1* @{node.value}")
             return f"%{id_}"
 
         case Integer():
@@ -235,6 +274,10 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
                 lines.append(f"store i32 {res_rhs}, i32* {out_name(node.lhs)}")
                 return
 
+            if isinstance(node.rhs, BoolTyped):
+                lines.append(f"store i1 {res_rhs}, i1* {out_name(node.lhs)}")
+                return
+
             elif isinstance(node.rhs, FloatTyped):
                 lines.append(f"store double {res_rhs}, double* {out_name(node.lhs)}")
                 return
@@ -250,6 +293,10 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
                 lines.append(f"@{node.name} = global double 0.0")
                 return
 
+            elif node.type_.value == "bool":
+                lines.append(f"@{node.name} = global i1 0")
+                return
+
             raise ValueError(f"Unknown type: {node.type_.value}")
 
         case LocalVar():
@@ -258,6 +305,10 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
                 return
             elif node.type_.value == "float":
                 lines.append(f"%{node.name} = alloca double")
+                return
+
+            elif node.type_.value == "bool":
+                lines.append(f"%{node.name} = alloca i1")
                 return
 
             raise ValueError(f"Unknown type: {node.type_.value}")
@@ -276,6 +327,9 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
             lines.append(
                 f"call i32 (i32) @_print_char(i32 {res_expr(node.expr, lines)})"
             )
+
+        case BoolPrint():
+            lines.append(f"call i1 (i1) @_print_bool(i1 {res_expr(node.expr, lines)})")
 
         case While():
             lt = gensym()
@@ -336,7 +390,7 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
 
         case Return():
             res = res_expr(node.expr, lines)
-            if isinstance(node.expr, IntTyped):
+            if isinstance(node.expr, (IntTyped, BoolTyped)):
                 lines.append(f"ret i32 {res}")
                 return
             elif isinstance(node.expr, FloatTyped):
