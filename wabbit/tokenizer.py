@@ -37,8 +37,6 @@ ONE_CHAR_SYMBOLS = {
     "/": "DIVIDE",
     ",": "COMMA",
     ".": "DOT",
-    "'": "QUOTE",
-    "\\": "BACKSLASH",
 }
 
 TWO_CHAR_SYMBOLS = {
@@ -85,6 +83,10 @@ def tokenize(source: str, fname: str = "file.wb") -> list[Token]:
             token = tokenize_digit(n, source, lineno, last_line_pos)
             tokens.append(token)
             n += len(token)
+
+        elif source[n] == "'":
+            token, n = tokenize_character(n, source, lineno, last_line_pos)
+            tokens.append(token)
 
         elif (symbol := peek(n, 1, source)) in TWO_CHAR_SYMBOLS:
             if symbol == "//":
@@ -146,6 +148,24 @@ def tokenize_digit(start: int, source: str, lineno: int, last_line_pos: int) -> 
             break
         n += 1
     return Token("INTEGER", source[start:n], lineno, start - last_line_pos)
+
+
+def tokenize_character(
+    start: int, source: str, lineno: int, last_line_pos: int
+) -> tuple[Token, int]:
+    n = start
+    while n < len(source):
+        n += 1
+        if source[n] == "'":
+            n += 1
+            break
+    value = source[start + 1 : n - 1].encode().decode("unicode_escape")
+    return Token(
+        "CHARACTER",
+        value=value,
+        lineno=lineno,
+        column=start - last_line_pos,
+    ), n
 
 
 def skip_line(start: int, source: str) -> int:

@@ -1,12 +1,11 @@
 from functools import partial
-from typing import Callable, Literal, cast
+from typing import Literal, cast
 
 from wabbit.exceptions import WabbitSyntaxError
 from wabbit.model import (
     Assignment,
     BinOp,
     Boolean,
-    BooleanExpression,
     Branch,
     Break,
     Call,
@@ -568,26 +567,18 @@ class Parser:
         return Name(value=token.value, loc=_loc_from_token(token))
 
     def parse_char(self) -> Char | ErrorExpr:
-        start = self.expect("QUOTE")
-        bkslash = None
-        if self.peek("BACKSLASH"):
-            bkslash = self.expect("BACKSLASH")
-        token = self.expect("NAME")
-        end = self.expect("QUOTE")
-
-        if (bkslash and len(bkslash) + len(token) > 2) or len(token) > 1:
+        token = self.expect("CHARACTER")
+        loc = SourceLoc(
+            lineno=token.lineno, start=token.column, end=token.column + len(token) + 1
+        )
+        if len(token.value) != 1:
             return ErrorExpr(
                 err=self._make_err(
                     token, f"Found {len(token)} characters, only 1 is expected."
                 ),
-                loc=_loc_from_token(token),
+                loc=loc,
             )
-        return Char(
-            value=token.value
-            if not bkslash
-            else (bkslash.value + token.value).encode().decode("unicode_escape"),
-            loc=SourceLoc(lineno=start.lineno, start=start.column, end=end.column),
-        )
+        return Char(value=token.value, loc=loc)
 
     def parse_int_type(self) -> Type:
         token = self.expect("INT")
