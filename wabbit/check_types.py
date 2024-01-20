@@ -2,6 +2,7 @@ from typing import Literal, cast
 
 from wabbit.exceptions import WabbitSyntaxError, WabbitTypeError
 from wabbit.model import (
+    BoolTyped,
     Break,
     CharTyped,
     ErrorExpr,
@@ -101,12 +102,14 @@ def check_types(ast: Program) -> Program:
     return ast
 
 
-def _type(node) -> Literal["int", "float", "char", "unknown"]:
+def _type(node) -> Literal["int", "float", "char", "bool", "unknown"]:
     if isinstance(node, IntTyped):
         return "int"
     elif isinstance(node, FloatTyped):
         return "float"
     elif isinstance(node, CharTyped):
+        return "char"
+    elif isinstance(node, BoolTyped):
         return "char"
     else:
         return "unknown"

@@ -340,12 +340,14 @@ def add_types(program: Program) -> Program:
     return cast(Program, Walker(visitor).traverse(program))
 
 
-def _type(node) -> Literal["int", "float", "char", "unknown"]:
+def _type(node) -> Literal["int", "float", "char", "bool", "unknown"]:
     if isinstance(node, IntTyped):
         return "int"
     elif isinstance(node, FloatTyped):
         return "float"
     elif isinstance(node, CharTyped):
+        return "char"
+    elif isinstance(node, BoolTyped):
         return "char"
     else:
         return "unknown"

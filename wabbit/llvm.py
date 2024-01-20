@@ -1,3 +1,5 @@
+from typing import Literal
+
 from wabbit.model import (
     Assignment,
     Boolean,
@@ -206,8 +208,10 @@ def res_expr(node: Expression, lines: Lines) -> str:
             return res_expr(node.expr, lines)
 
         case IntCall():
-            args_res = ", ".join([f"i32 {res_expr(arg, lines)}" for arg in node.args])
-            arg_types = ", ".join("i32" for _ in range(len(node.args)))
+            args_res = ", ".join(
+                [f"{_type(arg)} {res_expr(arg, lines)}" for arg in node.args]
+            )
+            arg_types = ", ".join(_type(arg) for arg in node.args)
             id_ = gensym()
 
             lines.append(f"%{id_} = call i32 ({arg_types}) @{node.name}({args_res})")
@@ -215,9 +219,9 @@ def res_expr(node: Expression, lines: Lines) -> str:
 
         case FloatCall():
             args_res = ", ".join(
-                [f"double {res_expr(arg, lines)}" for arg in node.args]
+                [f"{_type(arg)} {res_expr(arg, lines)}" for arg in node.args]
             )
-            arg_types = ", ".join("double" for _ in range(len(node.args)))
+            arg_types = ", ".join(_type(arg) for arg in node.args)
             id_ = gensym()
 
             lines.append(f"%{id_} = call double ({arg_types}) @{node.name}({args_res})")
@@ -404,3 +408,14 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
 
         case _:
             raise ValueError(f"Unexpected statement: {node}")
+
+
+def _type(node) -> Literal["i32", "double", "char", "i1"]:
+    if isinstance(node, (IntTyped, CharTyped)):
+        return "i32"
+    elif isinstance(node, FloatTyped):
+        return "double"
+    elif isinstance(node, BoolTyped):
+        return "i1"
+    else:
+        raise TypeError(f"Unexpected type: {node}")
