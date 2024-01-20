@@ -14,6 +14,7 @@ from wabbit.format import format_program
 from wabbit.llvm import generate_llvm
 from wabbit.model import Program
 from wabbit.parser import Parser
+from wabbit.precedence import set_precedence
 from wabbit.resolve import resolve_scopes
 from wabbit.tokenizer import tokenize as _tokenize
 from wabbit.unscript import unscript_toplevel
@@ -66,26 +67,58 @@ def source(file: str, optimize: bool = False):
 @app.command()
 def ast(
     file: str,
-    fold: bool = False,
+    validate: bool = False,
+    precedence: bool = False,
     typed: bool = False,
+    fold: bool = False,
     type_check: bool = False,
     deinit: bool = False,
     resolve: bool = False,
     unscript: bool = False,
 ):
+    # TODO(kennipj) Set up automatic dependency-based AST parsing.:
     ast = _to_ast(file)
-    if fold:
-        ast = fold_constants(ast)
-    if typed:
+    if validate:
+        ast = validate_ast(ast)
+    elif precedence:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
+    elif typed:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
         ast = add_types(ast)
-    if type_check:
+    elif type_check:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
+        ast = add_types(ast)
         ast = check_types(ast)
-    if deinit:
+    elif fold:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
+        ast = add_types(ast)
+        ast = fold_constants(ast)
+    elif deinit:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
+        ast = add_types(ast)
+        ast = fold_constants(ast)
         ast = deinit_variables(ast)
-    if resolve:
+    elif resolve:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
+        ast = add_types(ast)
+        ast = fold_constants(ast)
+        ast = deinit_variables(ast)
         ast = resolve_scopes(ast)
-    if unscript:
+    elif unscript:
+        ast = validate_ast(ast)
+        ast = set_precedence(ast)
+        ast = add_types(ast)
+        ast = fold_constants(ast)
+        ast = deinit_variables(ast)
+        ast = resolve_scopes(ast)
         ast = unscript_toplevel(ast)
+
     pprint(ast)
 
 
@@ -104,6 +137,7 @@ def _compile_to_llvm(path: str):
 
 def _simplify_tree(ast: Program):
     ast = validate_ast(ast)
+    ast = set_precedence(ast)
     ast = add_types(ast)
     ast = check_types(ast)
     ast = fold_constants(ast)
