@@ -251,7 +251,7 @@ class Parser:
         self.expect("DOT")
         decimals = self.expect("INTEGER")
         return Float(
-            value=float(f"{base.value}.{decimals.value}"),
+            value=f"{base.value}.{decimals.value}",
             loc=SourceLoc(
                 lineno=base.lineno,
                 start=base.column,

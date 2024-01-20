@@ -1,6 +1,6 @@
 from typing import cast
 
-from wabbit.model import BinOp, Integer, Numeric, Parenthesis, Program, UnaryOp
+from wabbit.model import BinOp, Integer, Parenthesis, Program, UnaryOp
 from wabbit.walker import Visitor, Walker
 
 
@@ -13,10 +13,10 @@ class FoldConstants(Visitor):
         rhs_val = None
         if isinstance(node.lhs, Integer):
             lhs_val = node.lhs.value
-        if isinstance(node.lhs, UnaryOp) and isinstance(node.lhs.expr, Numeric):
+        if isinstance(node.lhs, UnaryOp) and isinstance(node.lhs.expr, Integer):
             lhs_val = -node.lhs.expr.value
 
-        if isinstance(node.rhs, UnaryOp) and isinstance(node.rhs.expr, Numeric):
+        if isinstance(node.rhs, UnaryOp) and isinstance(node.rhs.expr, Integer):
             rhs_val = -node.rhs.expr.value
         if isinstance(node.rhs, Integer):
             rhs_val = node.rhs.value

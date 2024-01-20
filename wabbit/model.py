@@ -87,7 +87,7 @@ class Integer(Expression, IntTyped, Numeric):
 
 @dataclass
 class Float(Expression, FloatTyped, Numeric):
-    value: float
+    value: str
 
 
 @dataclass
