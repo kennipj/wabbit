@@ -14,7 +14,6 @@ from wabbit.format import format_program
 from wabbit.llvm import generate_llvm
 from wabbit.model import Program
 from wabbit.parser import Parser
-from wabbit.precedence import set_precedence
 from wabbit.resolve import resolve_scopes
 from wabbit.tokenizer import tokenize as _tokenize
 from wabbit.unscript import unscript_toplevel
@@ -82,37 +81,30 @@ def ast(
         ast = validate_ast(ast)
     elif precedence:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
     elif typed:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
         ast = add_types(ast)
     elif type_check:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
         ast = add_types(ast)
         ast = check_types(ast)
     elif fold:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
         ast = add_types(ast)
         ast = fold_constants(ast)
     elif deinit:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
         ast = add_types(ast)
         ast = fold_constants(ast)
         ast = deinit_variables(ast)
     elif resolve:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
         ast = add_types(ast)
         ast = fold_constants(ast)
         ast = deinit_variables(ast)
         ast = resolve_scopes(ast)
     elif unscript:
         ast = validate_ast(ast)
-        ast = set_precedence(ast)
         ast = add_types(ast)
         ast = fold_constants(ast)
         ast = deinit_variables(ast)
@@ -137,7 +129,7 @@ def _compile_to_llvm(path: str):
 
 def _simplify_tree(ast: Program):
     ast = validate_ast(ast)
-    ast = set_precedence(ast)
+    # ast = set_precedence(ast)
     ast = add_types(ast)
     ast = check_types(ast)
     ast = fold_constants(ast)

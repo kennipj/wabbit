@@ -35,7 +35,24 @@ from wabbit.model import (
 )
 from wabbit.tokenizer import Token
 
-BIN_OPS = ["+", "-", "*", "/", "<", "<=", "==", ">", ">=", "!=", "and", "or"]
+# BIN_OPS = ["+", "-", "*", "/", "<", "<=", "==", ">", ">=", "!=", "and", "or"]
+OP_PRECEDENCE = {
+    "*": 3,
+    "/": 3,
+    "+": 2,
+    "-": 2,
+    "<": 1,
+    "<=": 1,
+    "==": 1,
+    ">": 1,
+    ">=": 1,
+    "!=": 1,
+    "and": 0,
+    "or": 0,
+}
+BIN_OPS = {"*", "+", "-", "/"}
+REL_OPS = {"<", "<=", "==", ">", ">=", "!="}
+LOG_OPS = {"and", "or"}
 
 
 class Parser:
@@ -173,44 +190,86 @@ class Parser:
         raise SyntaxError(f"Unexpected token: {self.tokens[start]}")
 
     def parse_binop(self) -> Expression:
-        lhs = self.parse_term()
+        output_stack: list[Expression | Token] = []
+        operator_stack: list[Token] = []
+
+        def process_operator(op):
+            while operator_stack:
+                top_op = operator_stack[-1]
+                if OP_PRECEDENCE[top_op.value] > OP_PRECEDENCE[op.value] or (
+                    OP_PRECEDENCE[top_op.value] == OP_PRECEDENCE[op.value]
+                    and top_op.value not in {"^"}
+                ):
+                    output_stack.append(operator_stack.pop())
+                else:
+                    break
+            operator_stack.append(op)
+
+        # Parse the first term
+        output_stack.append(self.parse_term())
+
         while True:
             op = self.peek_one_of_val(*BIN_OPS)
             if not op:
-                return lhs
+                break
             self.expect(op.type_)
-            rhs = self.parse_term()
+            process_operator(op)
+            output_stack.append(self.parse_term())
 
-            match op.value:
-                case "+" | "*" | "-" | "/":
-                    lhs = BinOp(
-                        op=op.value,
-                        lhs=lhs,
-                        rhs=rhs,
-                        loc=SourceLoc(
-                            lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end
-                        ),
-                    )
-                case "<" | "<=" | "==" | ">" | ">=" | "!=":
-                    lhs = RelationalOp(
-                        op=op.value,
-                        lhs=lhs,
-                        rhs=rhs,
-                        loc=SourceLoc(
-                            lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end
-                        ),
-                    )
-                case "and" | "or":
-                    lhs = LogicalOp(
-                        op=op.value,
-                        lhs=lhs,
-                        rhs=rhs,
-                        loc=SourceLoc(
-                            lineno=lhs.loc.lineno, start=lhs.loc.start, end=rhs.loc.end
-                        ),
-                    )
-                case _:
-                    raise ValueError(f"Unexpected token {op}")
+        # Pop remaining operators from the stack
+        while operator_stack:
+            output_stack.append(operator_stack.pop())
+
+        # Construct the expression tree from the output stack
+        def build_expression(output_stack: list[Token | Expression]):
+            stack = []
+            for token in output_stack:
+                if isinstance(token, Expression):
+                    stack.append(token)
+                else:
+                    rhs = stack.pop()
+                    lhs = stack.pop()
+                    if token.value in BIN_OPS:
+                        expr = BinOp(
+                            op=cast(Literal["*", "/", "+", "-"], token.value),
+                            lhs=lhs,
+                            rhs=rhs,
+                            loc=SourceLoc(
+                                lineno=lhs.loc.lineno,
+                                start=lhs.loc.start,
+                                end=rhs.loc.end,
+                            ),
+                        )
+                    elif token.value in REL_OPS:
+                        expr = RelationalOp(
+                            op=cast(
+                                Literal["<", "<=", "==", ">", ">=", "!="], token.value
+                            ),
+                            lhs=lhs,
+                            rhs=rhs,
+                            loc=SourceLoc(
+                                lineno=lhs.loc.lineno,
+                                start=lhs.loc.start,
+                                end=rhs.loc.end,
+                            ),
+                        )
+                    elif token.value in LOG_OPS:
+                        expr = LogicalOp(
+                            op=cast(Literal["and", "or"], token.value),
+                            lhs=lhs,
+                            rhs=rhs,
+                            loc=SourceLoc(
+                                lineno=lhs.loc.lineno,
+                                start=lhs.loc.start,
+                                end=rhs.loc.end,
+                            ),
+                        )
+                    else:
+                        raise ValueError(f"Unexpected token {op}")
+                    stack.append(expr)
+            return stack[0]
+
+        return build_expression(output_stack)
 
     def parse_not(self) -> Negation:
         negate = self.expect("NOT")
