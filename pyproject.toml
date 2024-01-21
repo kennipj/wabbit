@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "wab"
+name = "wabbit"
 version = "0.1.0"
 description = ""
 authors = ["Kenni Jørgensen <kenni@argyle.com>"]
@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 typer = "^0.9.0"
-
+taskipy = "^1.12.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
@@ -16,9 +16,13 @@ ruff = "^0.1.13"
 pyright = "^1.1.347"
 radon = "^6.0.1"
 
+[tool.taskipy.tasks]
+lint = "ruff check ."
+test = "pytest tests -vv"
+check_types = "pyright"
+fmt = "ruff format && ruff check . --fix"
+
 [tool.poetry.scripts]
-wab = "wab.main:app"
-wabbi = "wabbi.main:app"
 wabbit = "wabbit.main:app"
 
 [build-system]

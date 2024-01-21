@@ -193,23 +193,6 @@ class AddTypes(Visitor):
         else:
             self._globals[node.name] = node.type_.value
         return node
-        # if node.type_.value == "int":
-        #     self._vars[node.name] = "int"
-        #     return node
-
-        # elif node.type_.value == "float":
-        #     self._vars[node.name] = "float"
-        #     return node
-
-        # elif node.type_.value == "char":
-        #     self._vars[node.name] = "char"
-        #     return node
-
-        # elif node.type_.value == "char":
-        #     self._vars[node.name] = "char"
-        #     return node
-
-        # raise TypeError(f"Unexpected type {node.type_}")
 
     def visit_call(self, node: Call) -> Expression:
         func = self._funcs.get(node.name)

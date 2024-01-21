@@ -24,10 +24,6 @@ class CharTyped:
     ...
 
 
-class Numeric:
-    value: int | float
-
-
 @dataclass
 class SourceLoc:
     lineno: int
@@ -81,23 +77,18 @@ class BoolName(Name, BoolTyped):
 
 
 @dataclass
-class Integer(Expression, IntTyped, Numeric):
+class Integer(Expression, IntTyped):
     value: int
 
 
 @dataclass
-class Float(Expression, FloatTyped, Numeric):
+class Float(Expression, FloatTyped):
     value: str
 
 
 @dataclass
 class Char(Expression, CharTyped):
     value: str
-
-
-@dataclass
-class BooleanExpression(Expression):
-    ...
 
 
 @dataclass
@@ -118,7 +109,7 @@ class FloatBinOp(BinOp, FloatTyped):
 
 
 @dataclass
-class RelationalOp(BooleanExpression):
+class RelationalOp(Expression):
     op: Literal["==", "<", ">", "<=", ">=", "!="]
     lhs: Expression
     rhs: Expression

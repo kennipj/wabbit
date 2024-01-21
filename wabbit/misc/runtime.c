@@ -1,8 +1,4 @@
-/* For LLVM, you need a runtime function to produce ouput.  Include
-   this file with final compilation with clang. For example:
-
-   shell % clang out.ll misc/runtime.c -o out.exe
-*/
+/* Runtime to be included for compiled code, to enable print.*/
 
 #include <stdio.h>
 #include <stdbool.h>
