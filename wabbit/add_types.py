@@ -331,6 +331,6 @@ def _type(node) -> Literal["int", "float", "char", "bool", "unknown"]:
     elif isinstance(node, CharTyped):
         return "char"
     elif isinstance(node, BoolTyped):
-        return "char"
+        return "bool"
     else:
         return "unknown"

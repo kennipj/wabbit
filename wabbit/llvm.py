@@ -2,6 +2,7 @@ from typing import Literal
 
 from wabbit.model import (
     Assignment,
+    BoolCall,
     Boolean,
     BoolGlobalName,
     BoolLocalName,
@@ -11,6 +12,7 @@ from wabbit.model import (
     Branch,
     Break,
     Char,
+    CharCall,
     CharGlobalName,
     CharLocalName,
     CharPrint,
@@ -55,10 +57,7 @@ from wabbit.utils import Lines
 _n = 0
 
 
-types = {
-    "int": "i32",
-    "float": "double",
-}
+types = {"int": "i32", "float": "double", "bool": "i1", "char": "i32"}
 
 
 def gensym() -> str:
@@ -207,7 +206,7 @@ def res_expr(node: Expression, lines: Lines) -> str:
         case Parenthesis():
             return res_expr(node.expr, lines)
 
-        case IntCall():
+        case IntCall() | CharCall():
             args_res = ", ".join(
                 [f"{_type(arg)} {res_expr(arg, lines)}" for arg in node.args]
             )
@@ -225,6 +224,16 @@ def res_expr(node: Expression, lines: Lines) -> str:
             id_ = gensym()
 
             lines.append(f"%{id_} = call double ({arg_types}) @{node.name}({args_res})")
+            return f"%{id_}"
+
+        case BoolCall():
+            args_res = ", ".join(
+                [f"{_type(arg)} {res_expr(arg, lines)}" for arg in node.args]
+            )
+            arg_types = ", ".join(_type(arg) for arg in node.args)
+            id_ = gensym()
+
+            lines.append(f"%{id_} = call i1 ({arg_types}) @{node.name}({args_res})")
             return f"%{id_}"
 
         case IntLocalName() | CharLocalName():
@@ -278,7 +287,7 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
                 lines.append(f"store i32 {res_rhs}, i32* {out_name(node.lhs)}")
                 return
 
-            if isinstance(node.rhs, BoolTyped):
+            elif isinstance(node.rhs, BoolTyped):
                 lines.append(f"store i1 {res_rhs}, i1* {out_name(node.lhs)}")
                 return
 
@@ -383,7 +392,9 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
                     lines.append(f"%{arg.value} = alloca {types[t]}")
                     lines.append(f"store {types[t]} %.a{idx}, {types[t]}* %{arg.value}")
                 any(out_stmt(stmt, lines) for stmt in node.body)
-                lines.append(f"ret {ret_type} {'0' if ret_type == 'i32' else '0.0'}")
+                lines.append(
+                    f"ret {ret_type} {'0' if ret_type in ('i32', 'i1') else '0.0'}"
+                )
 
             lines.append("}")
 
@@ -394,11 +405,15 @@ def out_stmt(node: Statement, lines: Lines, break_to: str | None = None) -> None
 
         case Return():
             res = res_expr(node.expr, lines)
-            if isinstance(node.expr, (IntTyped, BoolTyped)):
+            if isinstance(node.expr, (IntTyped, CharTyped)):
                 lines.append(f"ret i32 {res}")
                 return
             elif isinstance(node.expr, FloatTyped):
                 lines.append(f"ret double {res}")
+                return
+
+            elif isinstance(node.expr, BoolTyped):
+                lines.append(f"ret i1 {res}")
                 return
 
             raise ValueError(f"Untyped expression! {node.expr}")

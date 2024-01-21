@@ -24,7 +24,7 @@ app = Typer()
 
 @app.command()
 def llvm(file: str, output: str | None = None):
-    llvm = _compile_to_llvm(file)
+    llvm = compile_to_llvm(file)
     if output:
         with open(output, "w") as f:
             f.write(llvm)
@@ -38,7 +38,7 @@ def compile(
     output: str,
 ):
     path = Path(output)
-    llvm = _compile_to_llvm(in_file)
+    llvm = compile_to_llvm(in_file)
 
     with TemporaryDirectory() as temp_dir:
         file_path = Path(temp_dir) / path.with_suffix(".ll")
@@ -121,7 +121,7 @@ def tokenize(file: str) -> None:
     pprint(_tokenize(source, file))
 
 
-def _compile_to_llvm(path: str):
+def compile_to_llvm(path: str):
     ast = _to_ast(path)
     ast = _simplify_tree(ast)
     return generate_llvm(ast)

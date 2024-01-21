@@ -209,7 +209,7 @@ class Parser:
         output_stack.append(self.parse_term())
 
         while True:
-            op = self.peek_one_of_val(*BIN_OPS)
+            op = self.peek_one_of_val(*BIN_OPS | REL_OPS | LOG_OPS)
             if not op:
                 break
             self.expect(op.type_)
